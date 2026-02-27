@@ -1,0 +1,1341 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SyncKode — Profile Settings</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <style>
+    body { background: var(--bg-void); overflow-x: hidden; }
+
+    /* ══ TOPBAR ═══════════════════════════════════════════════ */
+    .topbar {
+      position: sticky; top: 0; z-index: var(--z-overlay);
+      height: 64px;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 var(--space-6);
+      background: rgba(8,8,16,0.95);
+      border-bottom: 1px solid rgba(255,215,0,0.1);
+      backdrop-filter: blur(20px);
+    }
+
+    .topbar-logo {
+      display: flex; align-items: center; gap: var(--space-3); text-decoration: none;
+    }
+
+    .topbar-logo-icon {
+      width: 36px; height: 36px;
+      background: var(--gradient-gold);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem; color: #0D0D1A;
+      box-shadow: 0 0 16px rgba(255,165,0,0.3);
+    }
+
+    .topbar-logo-text {
+      font-family: var(--font-ui); font-size: 1.15rem; font-weight: 800; letter-spacing: -0.02em;
+    }
+
+    .topbar-actions { display: flex; align-items: center; gap: var(--space-3); }
+
+    .back-btn {
+      display: flex; align-items: center; gap: var(--space-2);
+      padding: var(--space-2) var(--space-4);
+      border-radius: var(--radius-md);
+      background: rgba(255,215,0,0.06);
+      border: 1px solid rgba(255,215,0,0.12);
+      color: var(--text-secondary);
+      cursor: pointer; text-decoration: none;
+      font-size: 0.85rem; font-weight: 500; font-family: var(--font-ui);
+      transition: all var(--transition-base);
+    }
+    .back-btn:hover { color: var(--gold-300); border-color: rgba(255,215,0,0.3); background: rgba(255,215,0,0.1); }
+
+    .user-chip {
+      display: flex; align-items: center; gap: var(--space-2);
+      padding: var(--space-2) var(--space-3);
+      border-radius: var(--radius-md);
+      background: rgba(255,215,0,0.06);
+      border: 1px solid rgba(255,215,0,0.12);
+    }
+    .user-chip-name { font-size: 0.85rem; font-weight: 600; font-family: var(--font-ui); }
+
+    /* ══ PAGE LAYOUT ══════════════════════════════════════════ */
+    .page-wrap {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      min-height: calc(100vh - 64px);
+    }
+
+    /* ══ SIDEBAR NAV ══════════════════════════════════════════ */
+    .profile-sidebar {
+      position: sticky; top: 64px;
+      height: calc(100vh - 64px);
+      overflow-y: auto;
+      background: var(--bg-deep);
+      border-right: 1px solid rgba(255,215,0,0.08);
+      padding: var(--space-6) var(--space-4);
+      display: flex; flex-direction: column; gap: var(--space-2);
+    }
+
+    .sidebar-label {
+      font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.12em; color: var(--text-muted);
+      padding: 0 var(--space-3); margin: var(--space-4) 0 var(--space-2);
+    }
+
+    .nav-link {
+      display: flex; align-items: center; gap: var(--space-3);
+      padding: var(--space-3) var(--space-4);
+      border-radius: var(--radius-md);
+      font-size: 0.88rem; font-weight: 500; font-family: var(--font-ui);
+      color: var(--text-secondary);
+      cursor: pointer; text-decoration: none;
+      border: 1px solid transparent;
+      transition: all var(--transition-base);
+      position: relative;
+    }
+    .nav-link:hover { background: rgba(255,215,0,0.06); color: var(--text-primary); border-color: rgba(255,215,0,0.1); }
+    .nav-link.active { background: rgba(255,215,0,0.1); color: var(--gold-300); border-color: rgba(255,215,0,0.2); }
+    .nav-link.active::before {
+      content: ''; position: absolute; left: -4px; top: 50%; transform: translateY(-50%);
+      width: 3px; height: 60%; border-radius: 2px; background: var(--gradient-gold);
+    }
+    .nav-link .nav-icon { font-size: 1rem; opacity: 0.7; }
+    .nav-link.active .nav-icon { opacity: 1; }
+    .nav-link.danger:hover { color: var(--neon-pink); background: rgba(255,45,120,0.06); border-color: rgba(255,45,120,0.15); }
+
+    .sidebar-divider { height: 1px; background: rgba(255,215,0,0.08); margin: var(--space-3) var(--space-3); }
+
+    /* ══ MAIN CONTENT ═════════════════════════════════════════ */
+    .profile-main {
+      padding: var(--space-8) var(--space-10);
+      overflow-y: auto;
+      background: var(--bg-void);
+      position: relative;
+    }
+
+    .profile-main::before {
+      content: '';
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background:
+        radial-gradient(ellipse 70% 50% at 60% 10%, rgba(255,215,0,0.035) 0%, transparent 70%),
+        radial-gradient(ellipse 50% 40% at 90% 80%, rgba(139,92,246,0.04) 0%, transparent 70%);
+    }
+
+    .content-inner { position: relative; z-index: 1; max-width: 720px; }
+
+    /* ── Section ─────────────────────────────────────────────── */
+    .section {
+      display: none;
+      animation: fade-in 0.3s ease both;
+    }
+    .section.active { display: block; }
+
+    .section-header { margin-bottom: var(--space-8); }
+    .section-title { font-size: 1.5rem; font-weight: 800; font-family: var(--font-ui); margin-bottom: var(--space-1); }
+    .section-subtitle { font-size: 0.88rem; color: var(--text-muted); }
+
+    /* ── Card ────────────────────────────────────────────────── */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid rgba(255,215,0,0.1);
+      border-radius: var(--radius-xl);
+      padding: var(--space-6);
+      margin-bottom: var(--space-5);
+      transition: border-color var(--transition-base);
+    }
+    .card:hover { border-color: rgba(255,215,0,0.18); }
+
+    .card-title {
+      font-size: 0.95rem; font-weight: 700; font-family: var(--font-ui);
+      color: var(--text-primary); margin-bottom: var(--space-1);
+      display: flex; align-items: center; gap: var(--space-2);
+    }
+    .card-title i { color: var(--gold-300); font-size: 1rem; }
+    .card-desc { font-size: 0.82rem; color: var(--text-muted); margin-bottom: var(--space-5); }
+
+    /* ── Avatar Upload ───────────────────────────────────────── */
+    .avatar-upload-area {
+      display: flex; align-items: center; gap: var(--space-6);
+      padding: var(--space-5);
+      background: rgba(255,215,0,0.03);
+      border: 2px dashed rgba(255,215,0,0.15);
+      border-radius: var(--radius-lg);
+      transition: all var(--transition-base);
+      cursor: pointer;
+      position: relative; overflow: hidden;
+    }
+    .avatar-upload-area:hover { border-color: rgba(255,215,0,0.4); background: rgba(255,215,0,0.05); }
+
+    .avatar-preview {
+      width: 80px; height: 80px; border-radius: 50%; flex-shrink: 0;
+      background: var(--gradient-gold);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.8rem; font-weight: 800; font-family: var(--font-ui); color: #0D0D1A;
+      position: relative;
+      box-shadow: 0 0 24px rgba(255,165,0,0.4);
+    }
+
+    .avatar-edit-overlay {
+      position: absolute; inset: 0; border-radius: 50%;
+      background: rgba(0,0,0,0.6);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; transition: opacity var(--transition-fast);
+    }
+    .avatar-upload-area:hover .avatar-edit-overlay { opacity: 1; }
+
+    .avatar-upload-info h4 { font-size: 0.95rem; font-weight: 700; font-family: var(--font-ui); margin-bottom: 4px; }
+    .avatar-upload-info p  { font-size: 0.78rem; color: var(--text-muted); }
+
+    .avatar-actions { display: flex; gap: var(--space-2); margin-top: var(--space-3); }
+
+    /* ── Form Fields ─────────────────────────────────────────── */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
+    .form-grid.full { grid-template-columns: 1fr; }
+
+    .field { display: flex; flex-direction: column; gap: var(--space-2); margin-bottom: var(--space-4); }
+    .field:last-child { margin-bottom: 0; }
+
+    .field-label {
+      font-size: 0.8rem; font-weight: 600; font-family: var(--font-ui);
+      color: var(--text-secondary); display: flex; align-items: center; gap: var(--space-2);
+    }
+    .field-label .badge-new {
+      font-size: 0.6rem; padding: 1px 6px; border-radius: var(--radius-full);
+      background: rgba(0,255,159,0.15); border: 1px solid rgba(0,255,159,0.3); color: var(--neon-green);
+    }
+
+    .field-input {
+      padding: var(--space-3) var(--space-4);
+      background: rgba(255,215,0,0.04);
+      border: 1px solid rgba(255,215,0,0.12);
+      border-radius: var(--radius-md);
+      color: var(--text-primary);
+      font-size: 0.9rem; font-family: var(--font-body);
+      outline: none;
+      transition: all var(--transition-base);
+    }
+    .field-input:focus { border-color: rgba(255,215,0,0.45); background: rgba(255,215,0,0.07); box-shadow: 0 0 0 3px rgba(255,215,0,0.08); }
+    .field-input::placeholder { color: var(--text-muted); }
+
+    .field-input.danger:focus { border-color: rgba(255,45,120,0.45); box-shadow: 0 0 0 3px rgba(255,45,120,0.08); }
+
+    textarea.field-input { resize: vertical; min-height: 90px; line-height: 1.6; }
+
+    .field-hint { font-size: 0.75rem; color: var(--text-muted); }
+    .field-hint.success { color: var(--neon-green); }
+    .field-hint.error   { color: var(--neon-pink); }
+
+    .input-with-icon { position: relative; }
+    .input-with-icon .field-input { padding-right: 44px; }
+    .input-icon {
+      position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+      color: var(--text-muted); font-size: 1rem; cursor: pointer;
+      transition: color var(--transition-fast);
+    }
+    .input-icon:hover { color: var(--gold-300); }
+
+    /* ── Username with prefix ────────────────────────────────── */
+    .input-prefix-group { display: flex; }
+    .input-prefix {
+      padding: var(--space-3) var(--space-4);
+      background: rgba(255,215,0,0.06);
+      border: 1px solid rgba(255,215,0,0.12); border-right: none;
+      border-radius: var(--radius-md) 0 0 var(--radius-md);
+      color: var(--text-muted); font-size: 0.9rem; font-family: var(--font-mono);
+      flex-shrink: 0;
+    }
+    .input-prefix-group .field-input { border-radius: 0 var(--radius-md) var(--radius-md) 0; }
+
+    /* ── Toggle Switch ───────────────────────────────────────── */
+    .toggle-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: var(--space-4) 0;
+      border-bottom: 1px solid rgba(255,215,0,0.06);
+    }
+    .toggle-row:last-child { border-bottom: none; padding-bottom: 0; }
+
+    .toggle-info h4 { font-size: 0.88rem; font-weight: 600; font-family: var(--font-ui); margin-bottom: 2px; }
+    .toggle-info p  { font-size: 0.78rem; color: var(--text-muted); }
+
+    .toggle {
+      position: relative; width: 44px; height: 24px; flex-shrink: 0;
+    }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-track {
+      position: absolute; inset: 0; cursor: pointer;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: var(--radius-full);
+      transition: all var(--transition-base);
+    }
+    .toggle-track::before {
+      content: ''; position: absolute;
+      width: 16px; height: 16px; left: 3px; top: 3px;
+      background: var(--text-muted); border-radius: 50%;
+      transition: all var(--transition-base);
+    }
+    .toggle input:checked + .toggle-track { background: rgba(255,215,0,0.2); border-color: rgba(255,215,0,0.4); }
+    .toggle input:checked + .toggle-track::before { transform: translateX(20px); background: var(--gold-300); box-shadow: 0 0 8px rgba(255,215,0,0.6); }
+
+    /* ── Radio Group ─────────────────────────────────────────── */
+    .radio-group { display: flex; flex-direction: column; gap: var(--space-3); }
+    .radio-option {
+      display: flex; align-items: center; gap: var(--space-4);
+      padding: var(--space-4) var(--space-5);
+      background: rgba(255,215,0,0.03);
+      border: 1px solid rgba(255,215,0,0.1);
+      border-radius: var(--radius-md);
+      cursor: pointer; transition: all var(--transition-base);
+      position: relative;
+    }
+    .radio-option:hover { border-color: rgba(255,215,0,0.25); background: rgba(255,215,0,0.06); }
+    .radio-option.selected { border-color: rgba(255,215,0,0.4); background: rgba(255,215,0,0.08); }
+    .radio-option.selected::after {
+      content: ''; position: absolute; right: var(--space-4); top: 50%; transform: translateY(-50%);
+      width: 18px; height: 18px; border-radius: 50%;
+      background: var(--gradient-gold);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .radio-icon { font-size: 1.4rem; }
+    .radio-label h4 { font-size: 0.88rem; font-weight: 600; font-family: var(--font-ui); }
+    .radio-label p  { font-size: 0.76rem; color: var(--text-muted); margin-top: 2px; }
+
+    /* ── Color Theme Picker ──────────────────────────────────── */
+    .theme-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-3); }
+    .theme-swatch {
+      aspect-ratio: 16/9;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      position: relative;
+      border: 2px solid transparent;
+      overflow: hidden;
+      transition: all var(--transition-base);
+    }
+    .theme-swatch:hover { transform: scale(1.04); }
+    .theme-swatch.selected { border-color: var(--gold-300); box-shadow: 0 0 16px rgba(255,215,0,0.4); }
+    .theme-swatch .check {
+      position: absolute; top: 6px; right: 6px; width: 18px; height: 18px;
+      background: var(--gradient-gold); border-radius: 50%;
+      display: none; align-items: center; justify-content: center;
+      font-size: 0.6rem; color: #0D0D1A; font-weight: 900;
+    }
+    .theme-swatch.selected .check { display: flex; }
+    .theme-name {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      padding: var(--space-2) var(--space-3);
+      font-size: 0.68rem; font-weight: 700; font-family: var(--font-ui);
+      background: linear-gradient(transparent, rgba(0,0,0,0.8));
+      color: white;
+    }
+
+    /* ── Progress Bar ────────────────────────────────────────── */
+    .progress-bar { height: 6px; border-radius: 3px; background: rgba(255,255,255,0.08); overflow: hidden; margin-top: var(--space-2); }
+    .progress-fill { height: 100%; border-radius: 3px; background: var(--gradient-gold); transition: width 0.6s ease; }
+    .progress-fill.violet { background: var(--gradient-violet); }
+
+    /* ── Stats Grid ──────────────────────────────────────────── */
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-4); margin-bottom: var(--space-5); }
+    .stat-card {
+      padding: var(--space-5);
+      background: rgba(255,215,0,0.04);
+      border: 1px solid rgba(255,215,0,0.1);
+      border-radius: var(--radius-lg); text-align: center;
+      transition: all var(--transition-base);
+    }
+    .stat-card:hover { border-color: rgba(255,215,0,0.25); background: rgba(255,215,0,0.07); }
+    .stat-num { font-size: 1.8rem; font-weight: 800; font-family: var(--font-ui); }
+    .stat-num.gold   { color: var(--gold-300); }
+    .stat-num.violet { color: var(--neon-violet); }
+    .stat-num.green  { color: var(--neon-green); }
+    .stat-lbl { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; }
+
+    /* ── Badge Row ───────────────────────────────────────────── */
+    .badge-row { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+    .badge-chip {
+      display: flex; align-items: center; gap: 6px;
+      padding: 5px 12px; border-radius: var(--radius-full);
+      font-size: 0.75rem; font-weight: 600; font-family: var(--font-ui);
+      border: 1px solid;
+    }
+    .badge-chip.gold   { background: rgba(255,215,0,0.12); border-color: rgba(255,215,0,0.25); color: var(--gold-300); }
+    .badge-chip.violet { background: rgba(139,92,246,0.12); border-color: rgba(139,92,246,0.25); color: var(--neon-violet); }
+    .badge-chip.green  { background: rgba(0,255,159,0.1); border-color: rgba(0,255,159,0.25); color: var(--neon-green); }
+    .badge-chip.blue   { background: rgba(0,212,255,0.1); border-color: rgba(0,212,255,0.25); color: var(--neon-blue); }
+
+    /* ── Connected App Row ───────────────────────────────────── */
+    .integration-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: var(--space-4);
+      background: rgba(255,215,0,0.03);
+      border: 1px solid rgba(255,215,0,0.08);
+      border-radius: var(--radius-md);
+      margin-bottom: var(--space-3);
+      transition: all var(--transition-base);
+    }
+    .integration-row:hover { border-color: rgba(255,215,0,0.18); }
+    .integration-left { display: flex; align-items: center; gap: var(--space-3); }
+    .integration-icon {
+      width: 38px; height: 38px; border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem; flex-shrink: 0;
+    }
+    .integration-name { font-size: 0.88rem; font-weight: 600; font-family: var(--font-ui); }
+    .integration-status { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+    .integration-status.connected { color: var(--neon-green); }
+
+    /* ── Danger Zone ─────────────────────────────────────────── */
+    .danger-card {
+      background: rgba(255,45,120,0.04);
+      border: 1px solid rgba(255,45,120,0.2);
+      border-radius: var(--radius-xl);
+      padding: var(--space-6);
+      margin-bottom: var(--space-5);
+    }
+    .danger-card .card-title { color: var(--neon-pink); }
+    .danger-card .card-title i { color: var(--neon-pink); }
+
+    .danger-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: var(--space-4) 0;
+      border-bottom: 1px solid rgba(255,45,120,0.1);
+    }
+    .danger-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .danger-row h4 { font-size: 0.88rem; font-weight: 600; font-family: var(--font-ui); }
+    .danger-row p  { font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; }
+
+    .btn-danger {
+      padding: var(--space-2) var(--space-5);
+      border-radius: var(--radius-md);
+      background: rgba(255,45,120,0.1);
+      border: 1px solid rgba(255,45,120,0.3);
+      color: var(--neon-pink);
+      font-size: 0.82rem; font-weight: 600; font-family: var(--font-ui);
+      cursor: pointer; white-space: nowrap;
+      transition: all var(--transition-base);
+    }
+    .btn-danger:hover { background: rgba(255,45,120,0.2); border-color: rgba(255,45,120,0.5); }
+
+    /* ── Save Bar ────────────────────────────────────────────── */
+    .save-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: var(--space-4) var(--space-6);
+      background: rgba(13,13,26,0.95);
+      border-top: 1px solid rgba(255,215,0,0.12);
+      backdrop-filter: blur(20px);
+      position: sticky; bottom: 0; z-index: 10;
+      margin: var(--space-6) calc(-1 * var(--space-10)) 0;
+    }
+    .save-bar-left { font-size: 0.82rem; color: var(--text-muted); display: flex; align-items: center; gap: var(--space-2); }
+    .save-actions { display: flex; gap: var(--space-3); }
+
+    .btn-save {
+      display: flex; align-items: center; gap: var(--space-2);
+      padding: var(--space-3) var(--space-6);
+      background: var(--gradient-gold); border: none;
+      border-radius: var(--radius-md); color: #0D0D1A;
+      font-size: 0.88rem; font-weight: 700; font-family: var(--font-ui);
+      cursor: pointer; transition: all var(--transition-base);
+      box-shadow: 0 4px 16px rgba(255,165,0,0.3);
+    }
+    .btn-save:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(255,165,0,0.45); }
+
+    .btn-discard {
+      padding: var(--space-3) var(--space-5);
+      border-radius: var(--radius-md);
+      background: rgba(255,215,0,0.05);
+      border: 1px solid rgba(255,215,0,0.12);
+      color: var(--text-secondary); font-size: 0.88rem; font-weight: 600;
+      font-family: var(--font-ui); cursor: pointer;
+      transition: all var(--transition-base);
+    }
+    .btn-discard:hover { color: var(--text-primary); border-color: rgba(255,215,0,0.25); }
+
+    /* ── Responsive ──────────────────────────────────────────── */
+    @media (max-width: 900px) {
+      .page-wrap { grid-template-columns: 1fr; }
+      .profile-sidebar { display: none; }
+      .profile-main { padding: var(--space-6) var(--space-5); }
+      .form-grid { grid-template-columns: 1fr; }
+      .stats-grid { grid-template-columns: repeat(3, 1fr); }
+      .theme-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ══ TOPBAR ════════════════════════════════════════════════ -->
+<header class="topbar">
+  <a href="rooms.html" class="topbar-logo">
+    <div class="topbar-logo-icon">⚡</div>
+    <div class="topbar-logo-text">
+        <span class="text-gradient-gold">Sync</span><span style="color:var(--text-primary)">Kode</span>
+      </div>
+  </a>
+
+  <div class="topbar-actions">
+    <a href="rooms.html" class="back-btn">
+      <span class="material-icons-round" style="font-size:16px">arrow_back</span>
+      Back to Rooms
+    </a>
+    <div class="user-chip">
+      <div class="avatar avatar-sm" style="background:var(--gradient-gold);color:#0D0D1A">AJ</div>
+      <span class="user-chip-name">Alex Johnson</span>
+    </div>
+  </div>
+</header>
+
+<!-- ══ PAGE ══════════════════════════════════════════════════ -->
+<div class="page-wrap">
+
+  <!-- Sidebar -->
+  <aside class="profile-sidebar">
+    <div class="sidebar-label">Account</div>
+    <a class="nav-link active" onclick="showSection('profile', this)">
+      <i class="bi bi-person-circle nav-icon"></i>
+      Profile
+    </a>
+    <a class="nav-link" onclick="showSection('account', this)">
+      <i class="bi bi-shield-lock nav-icon"></i>
+      Security
+    </a>
+    <a class="nav-link" onclick="showSection('appearance', this)">
+      <i class="bi bi-palette nav-icon"></i>
+      Appearance
+    </a>
+
+    <div class="sidebar-label">Preferences</div>
+    <a class="nav-link" onclick="showSection('notifications', this)">
+      <i class="bi bi-bell nav-icon"></i>
+      Notifications
+    </a>
+    <a class="nav-link" onclick="showSection('integrations', this)">
+      <i class="bi bi-plug nav-icon"></i>
+      Integrations
+    </a>
+    <a class="nav-link" onclick="showSection('privacy', this)">
+      <i class="bi bi-eye-slash nav-icon"></i>
+      Privacy
+    </a>
+
+    <div class="sidebar-divider"></div>
+    <a class="nav-link danger" onclick="showSection('danger', this)">
+      <i class="bi bi-exclamation-triangle nav-icon"></i>
+      Danger Zone
+    </a>
+  </aside>
+
+  <!-- Main -->
+  <main class="profile-main">
+    <div class="content-inner">
+
+      <!-- ══ SECTION: Profile ══════════════════════════════════ -->
+      <section class="section active" id="sec-profile">
+        <div class="section-header">
+          <h1 class="section-title">Your Profile</h1>
+          <p class="section-subtitle">Manage how you appear to teammates and the community.</p>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-num gold">47</div>
+            <div class="stat-lbl">Rooms Joined</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-num violet">1.2k</div>
+            <div class="stat-lbl">Lines Committed</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-num green">98%</div>
+            <div class="stat-lbl">Uptime Score</div>
+          </div>
+        </div>
+
+        <!-- Avatar -->
+        <div class="card">
+          <div class="card-title"><i class="bi bi-image"></i> Profile Photo</div>
+          <div class="card-desc">Click to upload a new photo. Recommended: 256×256px or larger.</div>
+          <div class="avatar-upload-area" onclick="triggerAvatarUpload()">
+            <div class="avatar-preview" id="avatarPreview">
+              AJ
+              <div class="avatar-edit-overlay">
+                <span class="material-icons-round" style="color:white;font-size:1.5rem">photo_camera</span>
+              </div>
+            </div>
+            <div class="avatar-upload-info">
+              <h4>Alex Johnson</h4>
+              <p>Pro Coder ✦ · Member since Jan 2025</p>
+              <div class="avatar-actions">
+                <button class="btn btn-gold btn-sm" onclick="event.stopPropagation(); triggerAvatarUpload()">
+                  <i class="bi bi-upload"></i> Upload Photo
+                </button>
+                <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation(); removeAvatar()">
+                  Remove
+                </button>
+              </div>
+            </div>
+          </div>
+          <input type="file" id="avatarInput" accept="image/*" style="display:none" onchange="previewAvatar(this)" />
+        </div>
+
+        <!-- Basic Info -->
+        <div class="card">
+          <div class="card-title"><i class="bi bi-person"></i> Basic Information</div>
+          <div class="form-grid">
+            <div class="field">
+              <label class="field-label">First Name</label>
+              <input class="field-input" type="text" value="Alex" placeholder="First name" oninput="markDirty()" />
+            </div>
+            <div class="field">
+              <label class="field-label">Last Name</label>
+              <input class="field-input" type="text" value="Johnson" placeholder="Last name" oninput="markDirty()" />
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label">Username</label>
+            <div class="input-prefix-group">
+              <span class="input-prefix">nexus/</span>
+              <input class="field-input" type="text" value="alexjohnson" placeholder="username" oninput="markDirty(); checkUsername(this)" />
+            </div>
+            <span class="field-hint success" id="usernameHint">✓ nexus/alexjohnson is available</span>
+          </div>
+          <div class="field">
+            <label class="field-label">Bio</label>
+            <textarea class="field-input" placeholder="Tell the team a little about yourself..." oninput="markDirty()">Full-stack dev obsessed with TypeScript, WebSockets & clean architecture. Building real-time things. ⚡</textarea>
+            <span class="field-hint">Max 200 characters</span>
+          </div>
+          <div class="form-grid">
+            <div class="field">
+              <label class="field-label">Role / Title</label>
+              <input class="field-input" type="text" value="Senior Frontend Engineer" placeholder="e.g. Full-Stack Dev" oninput="markDirty()" />
+            </div>
+            <div class="field">
+              <label class="field-label">Location</label>
+              <div class="input-with-icon">
+                <input class="field-input" type="text" value="San Francisco, CA" placeholder="City, Country" oninput="markDirty()" />
+                <i class="bi bi-geo-alt input-icon"></i>
+              </div>
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label">Website / Portfolio</label>
+            <div class="input-with-icon">
+              <input class="field-input" type="url" value="https://alexj.dev" placeholder="https://yoursite.com" oninput="markDirty()" />
+              <i class="bi bi-link-45deg input-icon"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- Badges -->
+        <div class="card">
+          <div class="card-title"><i class="bi bi-award"></i> Achievements</div>
+          <div class="card-desc">Earned through activity on SyncKode.</div>
+          <div class="badge-row">
+            <span class="badge-chip gold"><i class="bi bi-star-fill"></i> Pro Coder</span>
+            <span class="badge-chip violet"><i class="bi bi-lightning-fill"></i> Speed Typer</span>
+            <span class="badge-chip green"><i class="bi bi-people-fill"></i> Team Player</span>
+            <span class="badge-chip blue"><i class="bi bi-cpu-fill"></i> AI Whisperer</span>
+            <span class="badge-chip gold"><i class="bi bi-fire"></i> 30-Day Streak</span>
+          </div>
+        </div>
+
+        <!-- Languages -->
+        <div class="card">
+          <div class="card-title"><i class="bi bi-code-slash"></i> Top Languages</div>
+          <div class="card-desc">Based on your coding sessions.</div>
+          <div style="display:flex;flex-direction:column;gap:var(--space-4)">
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:0.82rem;margin-bottom:var(--space-1)">
+                <span>TypeScript</span><span style="color:var(--gold-300);font-weight:700">68%</span>
+              </div>
+              <div class="progress-bar"><div class="progress-fill" style="width:68%"></div></div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:0.82rem;margin-bottom:var(--space-1)">
+                <span>Python</span><span style="color:var(--neon-violet);font-weight:700">21%</span>
+              </div>
+              <div class="progress-bar"><div class="progress-fill violet" style="width:21%"></div></div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:0.82rem;margin-bottom:var(--space-1)">
+                <span>Rust</span><span style="color:var(--neon-blue);font-weight:700">11%</span>
+              </div>
+              <div class="progress-bar"><div class="progress-fill" style="width:11%;background:var(--neon-blue)"></div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══ SECTION: Security ══════════════════════════════════ -->
+      <section class="section" id="sec-account">
+        <div class="section-header">
+          <h1 class="section-title">Security</h1>
+          <p class="section-subtitle">Manage your email, password and two-factor authentication.</p>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><i class="bi bi-envelope"></i> Email Address</div>
+          <div class="field">
+            <label class="field-label">Current Email</label>
+            <div class="input-with-icon">
+              <input class="field-input" type="email" value="alex@SyncKode.dev" oninput="markDirty()" />
+              <i class="bi bi-patch-check-fill input-icon" style="color:var(--neon-green)"></i>
+            </div>
+            <span class="field-hint success">✓ Email verified</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><i class="bi bi-lock"></i> Change Password</div>
+          <div class="field">
+            <label class="field-label">Current Password</label>
+            <div class="input-with-icon">
+              <input class="field-input" type="password" placeholder="Enter current password" id="currentPwd" oninput="markDirty()" />
+              <i class="bi bi-eye input-icon" onclick="togglePwd('currentPwd', this)"></i>
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="field">
+              <label class="field-label">New Password</label>
+              <div class="input-with-icon">
+                <input class="field-input" type="password" placeholder="New password" id="newPwd" oninput="checkPwdStrength(this); markDirty()" />
+                <i class="bi bi-eye input-icon" onclick="togglePwd('newPwd', this)"></i>
+              </div>
+              <div class="progress-bar" id="pwdStrengthBar" style="display:none"><div class="progress-fill" id="pwdStrengthFill" style="width:0%"></div></div>
+              <span class="field-hint" id="pwdStrengthLabel"></span>
+            </div>
+            <div class="field">
+              <label class="field-label">Confirm Password</label>
+              <div class="input-with-icon">
+                <input class="field-input" type="password" placeholder="Repeat new password" id="confirmPwd" oninput="checkPwdMatch(this); markDirty()" />
+                <i class="bi bi-eye input-icon" onclick="togglePwd('confirmPwd', this)"></i>
+              </div>
+              <span class="field-hint" id="pwdMatchLabel"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><i class="bi bi-shield-check"></i> Two-Factor Authentication</div>
+          <div class="card-desc">Add an extra layer of security to your account.</div>
+
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <h4>Authenticator App (TOTP)</h4>
+              <p>Use Google Authenticator, Authy, or similar apps</p>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" checked onchange="markDirty()">
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <h4>SMS Backup Kode</h4>
+              <p>Receive a one-time code via text message</p>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" onchange="markDirty()">
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <h4>Login Notifications</h4>
+              <p>Get notified when a new device signs into your account</p>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" checked onchange="markDirty()">
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><i class="bi bi-clock-history"></i> Active Sessions</div>
+          <div class="card-desc">Devices currently logged into your account.</div>
+          <div style="display:flex;flex-direction:column;gap:var(--space-3)">
+            <div class="integration-row">
+              <div class="integration-left">
+                <div class="integration-icon" style="background:rgba(0,212,255,0.1);color:var(--neon-blue)"><i class="bi bi-laptop"></i></div>
+                <div>
+                  <div class="integration-name">MacBook Pro — Chrome <span style="background:rgba(0,255,159,0.12);color:var(--neon-green);font-size:0.68rem;padding:1px 8px;border-radius:99px;border:1px solid rgba(0,255,159,0.2);margin-left:8px">This device</span></div>
+                  <div class="integration-status connected">San Francisco · Active now</div>
+                </div>
+              </div>
+            </div>
+            <div class="integration-row">
+              <div class="integration-left">
+                <div class="integration-icon" style="background:rgba(255,215,0,0.08);color:var(--gold-300)"><i class="bi bi-phone"></i></div>
+                <div>
+                  <div class="integration-name">iPhone 15 Pro — Safari</div>
+                  <div class="integration-status">New York · 2 hours ago</div>
+                </div>
+              </div>
+              <button class="btn-danger" onclick="revokeSession(this)">Revoke</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══ SECTION: Appearance ═══════════════════════════════ -->
+      <section class="section" id="sec-appearance">
+        <div class="section-header">
+          <h1 class="section-title">Appearance</h1>
+          <p class="section-subtitle">Customize the look and feel of your workspace.</p>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><i class="bi bi-moon-stars"></i> Color Mode</div>
+          <div class="card-desc">Choose your preferred interface theme.</div>
+          <div class="radio-group">
+            <div class="radio-option selected" onclick="selectThemeMode(this, 'dark')">
+              <span class="radio-icon">🌑</span>
+              <div class="radio-label">
+                <h4>Dark Mode</h4>
+                <p>The classic SyncKode dark experience</p>
+              </div>
+            </div>
+            <div class="radio-option" onclick="selectThemeMode(this, 'light')">
+              <span class="radio-icon">☀️</span>
+              <div class="radio-label">
+                <h4>Light Mode</h4>
+                <p>Bright interface for daylight sessions</p>
+              </div>
+            </div>
+            <div class="radio-option" onclick="selectThemeMode(this, 'system')">
+              <span class="radio-icon">💻</span>
+              <div class="radio-label">
+                <h4>Sync with System</h4>
+                <p>Automatically match your OS preference</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><i class="bi bi-palette2"></i> Accent Color</div>
+          <div class="card-desc">Pick the accent color used throughout the UI.</div>
+          <div class="theme-grid">
+            <div class="theme-swatch selected" onclick="selectAccent(this)" style="background:linear-gradient(135deg,#FFD700,#FF6B1A)">
+              <div class="check">✓</div><div class="theme-name">Gold Fire</div>
+            </div>
+            <div class="theme-swatch" onclick="selectAccent(this)" style="background:linear-gradient(135deg,#8B5CF6,#00D4FF)">
+              <div class="check">✓</div><div class="theme-name">Neon Violet</div>
+            </div>
+            <div class="theme-swatch" onclick="selectAccent(this)" style="background:linear-gradient(135deg,#00FF9F,#00D4FF)">
+              <div class="check">✓</div><div class="theme-name">Cyber Mint</div>
+            </div>
+            <div class="theme-swatch" onclick="selectAccent(this)" style="background:linear-gradient(135deg,#FF2D78,#FF6B1A)">
+              <div class="check">✓</div><div class="theme-name">Neon Pink</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><i class="bi bi-type"></i> Editor Font</div>
+          <div class="card-desc">Font used in the code editor.</div>
+          <div class="radio-group">
+            <div class="radio-option selected" onclick="selectFont(this, 'JetBrains Mono')">
+              <span style="font-family:'JetBrains Mono',monospace;font-size:1rem;color:var(--gold-300)">Aa</span>
+              <div class="radio-label"><h4>JetBrains Mono</h4><p>Recommended · Ligatures supported</p></div>
+            </div>
+            <div class="radio-option" onclick="selectFont(this, 'Fira Kode')">
+              <span style="font-family:monospace;font-size:1rem;color:var(--neon-violet)">Aa</span>
+              <div class="radio-label"><h4>Fira Kode</h4><p>Popular · Good readability</p></div>
+            </div>
+            <div class="radio-option" onclick="selectFont(this, 'Cascadia Kode')">
+              <span style="font-family:monospace;font-size:1rem;color:var(--neon-blue)">Aa</span>
+              <div class="radio-label"><h4>Cascadia Kode</h4><p>Microsoft · Cursive italics</p></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><i class="bi bi-toggles"></i> Editor Preferences</div>
+          <div class="toggle-row">
+            <div class="toggle-info"><h4>Ligatures</h4><p>Enable font ligatures (=&gt;, !==, etc.)</p></div>
+            <label class="toggle"><input type="checkbox" checked onchange="markDirty()"><span class="toggle-track"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info"><h4>Line Numbers</h4><p>Show line numbers in editor gutter</p></div>
+            <label class="toggle"><input type="checkbox" checked onchange="markDirty()"><span class="toggle-track"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info"><h4>Minimap</h4><p>Show code overview minimap on the right</p></div>
+            <label class="toggle"><input type="checkbox" onchange="markDirty()"><span class="toggle-track"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info"><h4>Smooth Scrolling</h4><p>Animate scroll in the editor</p></div>
+            <label class="toggle"><input type="checkbox" checked onchange="markDirty()"><span class="toggle-track"></span></label>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══ SECTION: Notifications ════════════════════════════ -->
+      <section class="section" id="sec-notifications">
+        <div class="section-header">
+          <h1 class="section-title">Notifications</h1>
+          <p class="section-subtitle">Control what you're notified about and how.</p>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><i class="bi bi-people"></i> Room Activity</div>
+          <div class="toggle-row">
+            <div class="toggle-info"><h4>Peer joins your room</h4><p>Get notified when someone joins a room you created</p></div>
+            <label class="toggle"><input type="checkbox" checked onchange="markDirty()"><span class="toggle-track"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info"><h4>Room chat messages</h4><p>Notify on new messages while you're active</p></div>
+            <label class="toggle"><input type="checkbox" checked onchange="markDirty()"><span class="toggle-track"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info"><h4>Kode review requests</h4><p>When a teammate requests a review</p></div>
+            <label class="toggle"><input type="checkbox" checked onchange="markDirty()"><span class="toggle-track"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info"><h4>Room invitations</h4><p>When someone invites you to collaborate</p></div>
+            <label class="toggle"><input type="checkbox" checked onchange="markDirty()"><span class="toggle-track"></span></label>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><i class="bi bi-robot"></i> AI Assistant</div>
+          <div class="toggle-row">
+            <div class="toggle-info"><h4>AI suggestions detected</h4><p>Pop-up when AI finds optimizations in your code</p></div>
+            <label class="toggle"><input type="checkbox" checked onchange="markDirty()"><span class="toggle-track"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info"><h4>AI analysis complete</h4><p>Notify after a full file analysis finishes</p></div>
+            <label class="toggle"><input type="checkbox" onchange="markDirty()"><span class="toggle-track"></span></label>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><i class="bi bi-megaphone"></i> SyncKode Updates</div>
+          <div class="toggle-row">
+            <div class="toggle-info"><h4>Product announcements</h4><p>New features, major updates</p></div>
+            <label class="toggle"><input type="checkbox" checked onchange="markDirty()"><span class="toggle-track"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info"><h4>Weekly digest email</h4><p>Summary of your activity and team highlights</p></div>
+            <label class="toggle"><input type="checkbox" onchange="markDirty()"><span class="toggle-track"></span></label>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══ SECTION: Integrations ═════════════════════════════ -->
+      <section class="section" id="sec-integrations">
+        <div class="section-header">
+          <h1 class="section-title">Integrations</h1>
+          <p class="section-subtitle">Connect external tools to power up your workflow.</p>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><i class="bi bi-git"></i> Version Control</div>
+
+          <div class="integration-row">
+            <div class="integration-left">
+              <div class="integration-icon" style="background:rgba(255,255,255,0.06)"><i class="bi bi-github" style="color:white"></i></div>
+              <div>
+                <div class="integration-name">GitHub</div>
+                <div class="integration-status connected">Connected as @alexjohnson</div>
+              </div>
+            </div>
+            <button class="btn-danger" onclick="disconnectIntegration(this, 'GitHub')">Disconnect</button>
+          </div>
+
+          <div class="integration-row">
+            <div class="integration-left">
+              <div class="integration-icon" style="background:rgba(252,100,50,0.12)"><i class="bi bi-gitlab" style="color:#FC6432"></i></div>
+              <div>
+                <div class="integration-name">GitLab</div>
+                <div class="integration-status">Not connected</div>
+              </div>
+            </div>
+            <button class="btn btn-glass btn-sm" onclick="connectIntegration(this, 'GitLab')">
+              <i class="bi bi-plug"></i> Connect
+            </button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><i class="bi bi-chat-dots"></i> Communication</div>
+
+          <div class="integration-row">
+            <div class="integration-left">
+              <div class="integration-icon" style="background:rgba(74,21,75,0.3)"><i class="bi bi-slack" style="color:#E01E5A"></i></div>
+              <div>
+                <div class="integration-name">Slack</div>
+                <div class="integration-status connected">Connected — #nexus-dev channel</div>
+              </div>
+            </div>
+            <button class="btn-danger" onclick="disconnectIntegration(this, 'Slack')">Disconnect</button>
+          </div>
+
+          <div class="integration-row">
+            <div class="integration-left">
+              <div class="integration-icon" style="background:rgba(88,101,242,0.15)"><i class="bi bi-discord" style="color:#5865F2"></i></div>
+              <div>
+                <div class="integration-name">Discord</div>
+                <div class="integration-status">Not connected</div>
+              </div>
+            </div>
+            <button class="btn btn-glass btn-sm" onclick="connectIntegration(this, 'Discord')">
+              <i class="bi bi-plug"></i> Connect
+            </button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><i class="bi bi-kanban"></i> Project Management</div>
+
+          <div class="integration-row">
+            <div class="integration-left">
+              <div class="integration-icon" style="background:rgba(0,82,204,0.15)"><i class="bi bi-trello" style="color:#0052CC"></i></div>
+              <div>
+                <div class="integration-name">Jira / Trello</div>
+                <div class="integration-status">Not connected</div>
+              </div>
+            </div>
+            <button class="btn btn-glass btn-sm" onclick="connectIntegration(this, 'Jira')">
+              <i class="bi bi-plug"></i> Connect
+            </button>
+          </div>
+
+          <div class="integration-row">
+            <div class="integration-left">
+              <div class="integration-icon" style="background:rgba(255,215,0,0.08)"><i class="bi bi-notion" style="color:var(--text-primary)"></i></div>
+              <div>
+                <div class="integration-name">Notion</div>
+                <div class="integration-status">Not connected</div>
+              </div>
+            </div>
+            <button class="btn btn-glass btn-sm" onclick="connectIntegration(this, 'Notion')">
+              <i class="bi bi-plug"></i> Connect
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══ SECTION: Privacy ══════════════════════════════════ -->
+      <section class="section" id="sec-privacy">
+        <div class="section-header">
+          <h1 class="section-title">Privacy</h1>
+          <p class="section-subtitle">Control who can see your activity and profile information.</p>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><i class="bi bi-eye"></i> Profile Visibility</div>
+          <div class="radio-group">
+            <div class="radio-option selected" onclick="selectRadio(this)">
+              <span class="radio-icon">🌐</span>
+              <div class="radio-label"><h4>Public</h4><p>Anyone can view your profile and rooms</p></div>
+            </div>
+            <div class="radio-option" onclick="selectRadio(this)">
+              <span class="radio-icon">👥</span>
+              <div class="radio-label"><h4>Team Only</h4><p>Only teammates and room members</p></div>
+            </div>
+            <div class="radio-option" onclick="selectRadio(this)">
+              <span class="radio-icon">🔒</span>
+              <div class="radio-label"><h4>Private</h4><p>Only you can see your profile</p></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><i class="bi bi-activity"></i> Activity & Data</div>
+          <div class="toggle-row">
+            <div class="toggle-info"><h4>Show online status</h4><p>Let others see when you're active</p></div>
+            <label class="toggle"><input type="checkbox" checked onchange="markDirty()"><span class="toggle-track"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info"><h4>Share typing activity</h4><p>Show live cursors to collaborators</p></div>
+            <label class="toggle"><input type="checkbox" checked onchange="markDirty()"><span class="toggle-track"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info"><h4>Usage analytics</h4><p>Help improve SyncKode by sharing anonymous usage data</p></div>
+            <label class="toggle"><input type="checkbox" onchange="markDirty()"><span class="toggle-track"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info"><h4>Searchable profile</h4><p>Allow others to find you by name or username</p></div>
+            <label class="toggle"><input type="checkbox" checked onchange="markDirty()"><span class="toggle-track"></span></label>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══ SECTION: Danger Zone ══════════════════════════════ -->
+      <section class="section" id="sec-danger">
+        <div class="section-header">
+          <h1 class="section-title" style="color:var(--neon-pink)">Danger Zone</h1>
+          <p class="section-subtitle">These actions are irreversible. Please proceed with caution.</p>
+        </div>
+
+        <div class="danger-card">
+          <div class="card-title"><i class="bi bi-exclamation-triangle-fill"></i> Destructive Actions</div>
+          <div class="card-desc" style="margin-bottom:0">All actions below are permanent and cannot be undone.</div>
+
+          <div class="danger-row" style="margin-top:var(--space-4)">
+            <div>
+              <h4>Export My Data</h4>
+              <p>Download a full copy of your profile, rooms, and activity data</p>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="exportData()">
+              <i class="bi bi-download"></i> Export
+            </button>
+          </div>
+
+          <div class="danger-row">
+            <div>
+              <h4>Revoke All Sessions</h4>
+              <p>Log out from all devices except this one</p>
+            </div>
+            <button class="btn-danger" onclick="revokeAllSessions()">Revoke All</button>
+          </div>
+
+          <div class="danger-row">
+            <div>
+              <h4>Disable Account</h4>
+              <p>Temporarily hide your profile and pause all activity</p>
+            </div>
+            <button class="btn-danger" onclick="disableAccount()">Disable</button>
+          </div>
+
+          <div class="danger-row">
+            <div>
+              <h4>Delete Account</h4>
+              <p>Permanently delete your account, all rooms, and data</p>
+            </div>
+            <button class="btn-danger" style="background:rgba(255,45,120,0.2);border-color:rgba(255,45,120,0.5)" onclick="confirmDeleteAccount()">
+              <i class="bi bi-trash3"></i> Delete Account
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Save Bar -->
+      <div class="save-bar" id="saveBar" style="opacity:0;pointer-events:none;transition:opacity 0.3s">
+        <div class="save-bar-left">
+          <span class="material-icons-round" style="font-size:16px;color:var(--neon-orange)">edit</span>
+          You have unsaved changes
+        </div>
+        <div class="save-actions">
+          <button class="btn-discard" onclick="discardChanges()">Discard</button>
+          <button class="btn-save" onclick="saveChanges()">
+            <span class="material-icons-round" style="font-size:16px">check</span>
+            Save Changes
+          </button>
+        </div>
+      </div>
+
+    </div><!-- /content-inner -->
+  </main>
+</div><!-- /page-wrap -->
+
+<!-- ══ SCRIPTS ══════════════════════════════════════════════ -->
+<script>
+  /* ── Section Switching ─────────────────────────────────────── */
+  function showSection(id, navEl) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
+    document.getElementById('sec-' + id).classList.add('active');
+    navEl.classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  /* ── Dirty State ───────────────────────────────────────────── */
+  let isDirty = false;
+  function markDirty() {
+    if (!isDirty) {
+      isDirty = true;
+      const bar = document.getElementById('saveBar');
+      bar.style.opacity = '1'; bar.style.pointerEvents = 'auto';
+    }
+  }
+
+  function saveChanges() {
+    const bar = document.getElementById('saveBar');
+    bar.style.opacity = '0'; bar.style.pointerEvents = 'none';
+    isDirty = false;
+    showToast('✦ Profile saved successfully', 'success');
+  }
+
+  function discardChanges() {
+    const bar = document.getElementById('saveBar');
+    bar.style.opacity = '0'; bar.style.pointerEvents = 'none';
+    isDirty = false;
+    showToast('Changes discarded', 'info', 2000);
+  }
+
+  /* ── Avatar ────────────────────────────────────────────────── */
+  function triggerAvatarUpload() { document.getElementById('avatarInput').click(); }
+
+  function previewAvatar(input) {
+    if (!input.files || !input.files[0]) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const prev = document.getElementById('avatarPreview');
+      prev.style.background = 'none';
+      prev.style.padding = '0';
+      prev.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" /><div class="avatar-edit-overlay"><span class="material-icons-round" style="color:white;font-size:1.5rem">photo_camera</span></div>`;
+      markDirty();
+      showToast('Photo ready — save to apply changes', 'info');
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+
+  function removeAvatar() {
+    const prev = document.getElementById('avatarPreview');
+    prev.style.background = 'var(--gradient-gold)';
+    prev.innerHTML = 'AJ<div class="avatar-edit-overlay"><span class="material-icons-round" style="color:white;font-size:1.5rem">photo_camera</span></div>';
+    markDirty();
+    showToast('Photo removed', 'info', 2000);
+  }
+
+  /* ── Username check ────────────────────────────────────────── */
+  function checkUsername(input) {
+    const hint = document.getElementById('usernameHint');
+    const val = input.value.trim();
+    if (!val) { hint.textContent = ''; hint.className = 'field-hint'; return; }
+    hint.textContent = `✓ nexus/${val} is available`;
+    hint.className = 'field-hint success';
+  }
+
+  /* ── Password ──────────────────────────────────────────────── */
+  function togglePwd(id, iconEl) {
+    const input = document.getElementById(id);
+    if (input.type === 'password') { input.type = 'text'; iconEl.className = 'bi bi-eye-slash input-icon'; }
+    else { input.type = 'password'; iconEl.className = 'bi bi-eye input-icon'; }
+  }
+
+  function checkPwdStrength(input) {
+    const val = input.value;
+    const bar = document.getElementById('pwdStrengthBar');
+    const fill = document.getElementById('pwdStrengthFill');
+    const label = document.getElementById('pwdStrengthLabel');
+    if (!val) { bar.style.display = 'none'; label.textContent = ''; return; }
+    bar.style.display = 'block';
+    let score = 0;
+    if (val.length >= 8) score++;
+    if (/[A-Z]/.test(val)) score++;
+    if (/[0-9]/.test(val)) score++;
+    if (/[^A-Za-z0-9]/.test(val)) score++;
+    const levels = [
+      { w: '25%', color: 'var(--neon-pink)',   text: 'Weak' },
+      { w: '50%', color: 'var(--neon-orange)', text: 'Fair' },
+      { w: '75%', color: 'var(--gold-300)',    text: 'Good' },
+      { w: '100%',color: 'var(--neon-green)',  text: 'Strong' },
+    ];
+    const lvl = levels[score - 1] || levels[0];
+    fill.style.width = lvl.w; fill.style.background = lvl.color;
+    label.textContent = lvl.text; label.style.color = lvl.color;
+  }
+
+  function checkPwdMatch(input) {
+    const match = document.getElementById('pwdMatchLabel');
+    const newPwd = document.getElementById('newPwd').value;
+    if (!input.value) { match.textContent = ''; return; }
+    if (input.value === newPwd) { match.textContent = '✓ Passwords match'; match.className = 'field-hint success'; }
+    else { match.textContent = '✗ Passwords do not match'; match.className = 'field-hint error'; }
+  }
+
+  /* ── Theme / Appearance ────────────────────────────────────── */
+  function selectThemeMode(el, mode) {
+    el.closest('.radio-group').querySelectorAll('.radio-option').forEach(r => r.classList.remove('selected'));
+    el.classList.add('selected');
+    if (mode !== 'system') document.documentElement.setAttribute('data-theme', mode);
+    else document.documentElement.setAttribute('data-theme', window.matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light');
+    markDirty();
+  }
+
+  function selectAccent(el) {
+    el.closest('.theme-grid').querySelectorAll('.theme-swatch').forEach(s => s.classList.remove('selected'));
+    el.classList.add('selected');
+    markDirty();
+    showToast('Accent color updated ✨', 'success', 1800);
+  }
+
+  function selectFont(el, font) {
+    el.closest('.radio-group').querySelectorAll('.radio-option').forEach(r => r.classList.remove('selected'));
+    el.classList.add('selected');
+    markDirty();
+    showToast(`Editor font set to ${font}`, 'info', 2000);
+  }
+
+  function selectRadio(el) {
+    el.closest('.radio-group').querySelectorAll('.radio-option').forEach(r => r.classList.remove('selected'));
+    el.classList.add('selected');
+    markDirty();
+  }
+
+  /* ── Integrations ──────────────────────────────────────────── */
+  function connectIntegration(btn, name) {
+    btn.textContent = 'Connecting...';
+    setTimeout(() => {
+      btn.closest('.integration-row').querySelector('.integration-status').textContent = 'Connected';
+      btn.closest('.integration-row').querySelector('.integration-status').classList.add('connected');
+      btn.outerHTML = `<button class="btn-danger" onclick="disconnectIntegration(this, '${name}')">Disconnect</button>`;
+      showToast(`✦ ${name} connected successfully`, 'success');
+    }, 1200);
+  }
+
+  function disconnectIntegration(btn, name) {
+    const row = btn.closest('.integration-row');
+    const status = row.querySelector('.integration-status');
+    status.textContent = 'Not connected'; status.classList.remove('connected');
+    btn.outerHTML = `<button class="btn btn-glass btn-sm" onclick="connectIntegration(this, '${name}')"><i class="bi bi-plug"></i> Connect</button>`;
+    showToast(`${name} disconnected`, 'info', 2000);
+  }
+
+  /* ── Session ───────────────────────────────────────────────── */
+  function revokeSession(btn) {
+    btn.closest('.integration-row').style.opacity = '0.4';
+    btn.textContent = 'Revoked';
+    btn.disabled = true;
+    showToast('Session revoked', 'success', 2000);
+  }
+
+  function revokeAllSessions() {
+    showToast('All other sessions revoked', 'success');
+  }
+
+  /* ── Danger ────────────────────────────────────────────────── */
+  function exportData() { showToast('📦 Export started — you\'ll receive an email within 5 minutes', 'info', 4000); }
+  function disableAccount() { showToast('Account disabled — you can re-enable anytime', 'warning', 4000); }
+  function confirmDeleteAccount() {
+    showToast('⚠️ Account deletion requires email confirmation — check your inbox', 'error', 5000);
+  }
+
+  /* ── Toast ─────────────────────────────────────────────────── */
+  function showToast(message, type = 'info', duration = 3500) {
+    const container = document.getElementById('toastContainer');
+    const icons = { info:'info', success:'check_circle', error:'error', warning:'warning' };
+    const colors = { info:'var(--gold-300)', success:'var(--neon-green)', error:'var(--neon-pink)', warning:'var(--neon-orange)' };
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `
+      <span class="material-icons-round" style="color:${colors[type]};font-size:20px">${icons[type]}</span>
+      <span style="flex:1;font-size:0.88rem">${message}</span>
+      <button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--text-muted);cursor:pointer;padding:0">
+        <span class="material-icons-round" style="font-size:16px">close</span>
+      </button>`;
+    container.appendChild(toast);
+    setTimeout(() => {
+      toast.style.transition = 'all 0.4s ease';
+      toast.style.opacity = '0'; toast.style.transform = 'translateX(110%)';
+      setTimeout(() => toast.remove(), 400);
+    }, duration);
+  }
+
+  /* ── Theme on load ─────────────────────────────────────────── */
+  const saved = localStorage.getItem('nexus-theme');
+  if (saved) document.documentElement.setAttribute('data-theme', saved);
+</script>
+</body>
+</html>

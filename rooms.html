@@ -1,0 +1,1339 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SyncKode — Rooms</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" />
+  <style>
+    /* ══ LAYOUT ═══════════════════════════════════════════════ */
+    body { background: var(--bg-void); overflow-x: hidden; }
+
+    .page-grid {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      grid-template-rows: 64px 1fr;
+      min-height: 100vh;
+    }
+
+    /* ── TOPBAR ──────────────────────────────────────────────── */
+    .topbar {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 var(--space-6);
+      background: rgba(8, 8, 16, 0.95);
+      border-bottom: 1px solid rgba(255,215,0,0.1);
+      backdrop-filter: blur(20px);
+      position: sticky;
+      top: 0;
+      z-index: var(--z-overlay);
+    }
+
+    .topbar-logo {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      text-decoration: none;
+    }
+
+    .topbar-logo-icon {
+      width: 36px; height: 36px;
+      background: var(--gradient-gold);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      color: #0D0D1A;
+      box-shadow: 0 0 16px rgba(255,165,0,0.3);
+    }
+
+    .topbar-logo-text {
+      font-family: var(--font-ui);
+      font-size: 1.15rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .topbar-center {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      flex: 1;
+      max-width: 400px;
+      margin: 0 var(--space-8);
+    }
+
+    .search-bar {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      padding: var(--space-2) var(--space-4);
+      background: rgba(255,215,0,0.04);
+      border: 1px solid rgba(255,215,0,0.1);
+      border-radius: var(--radius-full);
+      transition: all var(--transition-base);
+    }
+
+    .search-bar:focus-within {
+      border-color: rgba(255,215,0,0.35);
+      background: rgba(255,215,0,0.07);
+      box-shadow: 0 0 20px rgba(255,215,0,0.08);
+    }
+
+    .search-input {
+      flex: 1;
+      background: none;
+      border: none;
+      outline: none;
+      color: var(--text-primary);
+      font-size: 0.88rem;
+      font-family: var(--font-body);
+    }
+
+    .search-input::placeholder { color: var(--text-muted); }
+
+    .topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+    }
+
+    .notif-btn {
+      width: 36px; height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-sm);
+      background: rgba(255,215,0,0.06);
+      border: 1px solid rgba(255,215,0,0.1);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all var(--transition-base);
+      position: relative;
+    }
+
+    .notif-btn:hover { color: var(--gold-300); background: rgba(255,215,0,0.12); }
+
+    .notif-badge {
+      position: absolute;
+      top: -4px; right: -4px;
+      width: 16px; height: 16px;
+      background: var(--neon-pink);
+      border-radius: 50%;
+      font-size: 0.6rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      border: 2px solid var(--bg-void);
+    }
+
+    .user-menu {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      padding: var(--space-2) var(--space-3);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all var(--transition-base);
+      border: 1px solid transparent;
+    }
+
+    .user-menu:hover {
+      background: rgba(255,215,0,0.06);
+      border-color: rgba(255,215,0,0.15);
+    }
+
+    .user-name { font-size: 0.88rem; font-weight: 600; font-family: var(--font-ui); }
+    .user-role { font-size: 0.7rem; color: var(--text-muted); }
+
+    /* ── SIDEBAR ──────────────────────────────────────────────── */
+    .sidebar {
+      background: var(--bg-deep);
+      border-right: 1px solid rgba(255,215,0,0.08);
+      padding: var(--space-6) var(--space-4);
+      position: sticky;
+      top: 64px;
+      height: calc(100vh - 64px);
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-6);
+    }
+
+    .sidebar-section-title {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      padding: 0 var(--space-3);
+      margin-bottom: var(--space-2);
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      padding: var(--space-3) var(--space-4);
+      border-radius: var(--radius-md);
+      font-size: 0.9rem;
+      font-weight: 500;
+      font-family: var(--font-ui);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all var(--transition-base);
+      text-decoration: none;
+      border: 1px solid transparent;
+      position: relative;
+    }
+
+    .nav-item:hover {
+      background: rgba(255,215,0,0.06);
+      color: var(--text-primary);
+      border-color: rgba(255,215,0,0.1);
+    }
+
+    .nav-item.active {
+      background: rgba(255,215,0,0.1);
+      color: var(--gold-300);
+      border-color: rgba(255,215,0,0.2);
+    }
+
+    .nav-item.active::before {
+      content: '';
+      position: absolute;
+      left: -4px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 3px;
+      height: 60%;
+      border-radius: 2px;
+      background: var(--gradient-gold);
+    }
+
+    .nav-count {
+      margin-left: auto;
+      font-size: 0.72rem;
+      padding: 1px 7px;
+      border-radius: var(--radius-full);
+      background: rgba(255,215,0,0.12);
+      color: var(--gold-400);
+    }
+
+    .sidebar-stats {
+      margin-top: auto;
+      padding: var(--space-4);
+      background: rgba(255,215,0,0.04);
+      border: 1px solid rgba(255,215,0,0.1);
+      border-radius: var(--radius-lg);
+    }
+
+    .stat-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-2) 0;
+    }
+
+    .stat-label { font-size: 0.8rem; color: var(--text-muted); }
+    .stat-value { font-size: 0.85rem; font-weight: 700; font-family: var(--font-mono); }
+    .stat-value.gold { color: var(--gold-300); }
+    .stat-value.green { color: var(--neon-green); }
+    .stat-value.blue { color: var(--neon-blue); }
+
+    /* ── MAIN CONTENT ─────────────────────────────────────────── */
+    .main-content {
+      padding: var(--space-8);
+      overflow-y: auto;
+      background: var(--bg-void);
+      position: relative;
+    }
+
+    /* Subtle BG Pattern */
+    .main-content::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 50% 0%, rgba(255,215,0,0.04) 0%, transparent 70%),
+        radial-gradient(ellipse 60% 40% at 80% 80%, rgba(139,92,246,0.04) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .content-inner { position: relative; z-index: 1; }
+
+    /* ── HERO SECTION ────────────────────────────────────────── */
+    .rooms-hero {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: var(--space-8);
+      gap: var(--space-6);
+    }
+
+    .rooms-hero-left {}
+    .rooms-hero-label {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: var(--space-1) var(--space-4);
+      background: rgba(255,215,0,0.1);
+      border: 1px solid rgba(255,215,0,0.2);
+      border-radius: var(--radius-full);
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--gold-300);
+      font-family: var(--font-ui);
+      margin-bottom: var(--space-4);
+      animation: slide-up 0.5s ease both;
+    }
+
+    .rooms-title {
+      font-size: 2.2rem;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      line-height: 1.1;
+      margin-bottom: var(--space-3);
+      animation: slide-up 0.5s 0.1s ease both;
+    }
+
+    .rooms-subtitle {
+      font-size: 0.95rem;
+      color: var(--text-secondary);
+      animation: slide-up 0.5s 0.2s ease both;
+    }
+
+    .create-room-btn {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      padding: var(--space-4) var(--space-6);
+      background: var(--gradient-gold);
+      border: none;
+      border-radius: var(--radius-lg);
+      font-family: var(--font-ui);
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #0D0D1A;
+      cursor: pointer;
+      transition: all var(--transition-base);
+      box-shadow: 0 8px 24px rgba(255,165,0,0.3), 0 0 40px rgba(255,215,0,0.15);
+      white-space: nowrap;
+      animation: slide-up 0.5s 0.3s ease both;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .create-room-btn::after {
+      content: '';
+      position: absolute;
+      top: 0; left: -100%;
+      width: 60%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+      animation: beam-sweep 2.5s ease-in-out infinite;
+    }
+
+    .create-room-btn:hover {
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: 0 16px 40px rgba(255,165,0,0.45), 0 0 60px rgba(255,215,0,0.25);
+    }
+
+    /* ── FILTER BAR ──────────────────────────────────────────── */
+    .filter-bar {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      margin-bottom: var(--space-6);
+      flex-wrap: wrap;
+      animation: slide-up 0.5s 0.4s ease both;
+    }
+
+    .filter-chip {
+      padding: var(--space-2) var(--space-4);
+      border-radius: var(--radius-full);
+      font-size: 0.82rem;
+      font-weight: 600;
+      font-family: var(--font-ui);
+      cursor: pointer;
+      transition: all var(--transition-base);
+      color: var(--text-secondary);
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .filter-chip:hover {
+      color: var(--gold-300);
+      border-color: rgba(255,215,0,0.25);
+      background: rgba(255,215,0,0.06);
+    }
+
+    .filter-chip.active {
+      background: var(--gradient-gold);
+      color: #0D0D1A;
+      border-color: transparent;
+      box-shadow: 0 4px 12px rgba(255,165,0,0.3);
+    }
+
+    .filter-divider { width: 1px; height: 24px; background: rgba(255,215,0,0.1); }
+
+    .sort-select {
+      padding: var(--space-2) var(--space-4);
+      background: rgba(255,215,0,0.04);
+      border: 1px solid rgba(255,215,0,0.1);
+      border-radius: var(--radius-md);
+      color: var(--text-secondary);
+      font-size: 0.82rem;
+      font-family: var(--font-ui);
+      cursor: pointer;
+      outline: none;
+      margin-left: auto;
+    }
+
+    /* ── STATS STRIP ─────────────────────────────────────────── */
+    .stats-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--space-4);
+      margin-bottom: var(--space-8);
+      animation: slide-up 0.5s 0.3s ease both;
+    }
+
+    .stat-card {
+      padding: var(--space-5) var(--space-6);
+      background: var(--glass-bg);
+      border: var(--border-default);
+      border-radius: var(--radius-lg);
+      transition: all var(--transition-base);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+    }
+    .stat-card:nth-child(1)::before { background: var(--gradient-gold); }
+    .stat-card:nth-child(2)::before { background: linear-gradient(90deg, #8B5CF6, #00D4FF); }
+    .stat-card:nth-child(3)::before { background: linear-gradient(90deg, #00FF9F, #00D4FF); }
+    .stat-card:nth-child(4)::before { background: linear-gradient(90deg, #FF2D78, #FF6B1A); }
+
+    .stat-card:hover {
+      border-color: rgba(255,215,0,0.25);
+      transform: translateY(-3px);
+      box-shadow: 0 12px 32px rgba(0,0,0,0.3);
+    }
+
+    .stat-num {
+      font-size: 2rem;
+      font-weight: 800;
+      font-family: var(--font-ui);
+      letter-spacing: -0.03em;
+      margin-bottom: var(--space-1);
+    }
+
+    .stat-desc { font-size: 0.82rem; color: var(--text-muted); }
+
+    /* ── ROOM CARDS GRID ─────────────────────────────────────── */
+    .rooms-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: var(--space-5);
+      animation: slide-up 0.6s 0.4s ease both;
+    }
+
+    /* ── ROOM CARD ───────────────────────────────────────────── */
+    .room-card {
+      background: var(--bg-card);
+      border: 1px solid rgba(255,215,0,0.08);
+      border-radius: var(--radius-xl);
+      padding: var(--space-6);
+      cursor: pointer;
+      transition: all var(--transition-base);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+    }
+
+    /* Color accent strip per card */
+    .room-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: var(--card-accent, var(--gradient-gold));
+      opacity: 0.85;
+    }
+
+    .room-card::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--gradient-card);
+      opacity: 0;
+      transition: opacity var(--transition-base);
+    }
+
+    .room-card:hover {
+      border-color: rgba(255,215,0,0.22);
+      transform: translateY(-5px) scale(1.005);
+      box-shadow: 0 20px 48px rgba(0,0,0,0.4), 0 0 40px rgba(255,215,0,0.06);
+    }
+
+    .room-card:hover::after { opacity: 1; }
+
+    .card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      position: relative;
+      z-index: 1;
+    }
+
+    .room-icon-wrap {
+      width: 52px; height: 52px;
+      border-radius: var(--radius-lg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      position: relative;
+    }
+
+    .room-status-dot {
+      position: absolute;
+      bottom: -2px; right: -2px;
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      border: 2px solid var(--bg-card);
+    }
+
+    .status-live { background: var(--neon-green); box-shadow: 0 0 8px var(--neon-green); }
+    .status-idle { background: var(--neon-orange); }
+
+    .card-badges {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: var(--space-2);
+    }
+
+    .room-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      font-family: var(--font-ui);
+      margin-bottom: var(--space-1);
+      position: relative;
+      z-index: 1;
+      transition: color var(--transition-base);
+    }
+
+    .room-card:hover .room-title { color: var(--gold-300); }
+
+    .room-desc {
+      font-size: 0.83rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Language tags */
+    .lang-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      position: relative;
+      z-index: 1;
+    }
+
+    .lang-tag {
+      padding: 3px 10px;
+      border-radius: var(--radius-full);
+      font-size: 0.72rem;
+      font-weight: 600;
+      font-family: var(--font-mono);
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: var(--text-secondary);
+      transition: all var(--transition-fast);
+    }
+
+    .lang-tag:hover {
+      background: rgba(255,215,0,0.1);
+      border-color: rgba(255,215,0,0.25);
+      color: var(--gold-300);
+    }
+
+    /* Card Bottom */
+    .card-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: var(--space-4);
+      border-top: 1px solid rgba(255,215,0,0.06);
+      position: relative;
+      z-index: 1;
+    }
+
+    .user-avatars {
+      display: flex;
+      align-items: center;
+    }
+
+    .user-avatars .avatar {
+      margin-left: -8px;
+      border: 2px solid var(--bg-card);
+      transition: all var(--transition-fast);
+    }
+
+    .user-avatars .avatar:first-child { margin-left: 0; }
+    .user-avatars:hover .avatar { margin-left: -4px; }
+
+    .coder-count {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-left: var(--space-3);
+    }
+
+    .ai-badge {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: var(--radius-full);
+      background: linear-gradient(135deg, rgba(139,92,246,0.15), rgba(0,212,255,0.1));
+      border: 1px solid rgba(139,92,246,0.3);
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--neon-violet);
+      font-family: var(--font-ui);
+    }
+
+    .join-btn {
+      padding: var(--space-2) var(--space-5);
+      background: transparent;
+      border: 1px solid rgba(255,215,0,0.2);
+      border-radius: var(--radius-md);
+      color: var(--gold-300);
+      font-size: 0.82rem;
+      font-weight: 600;
+      font-family: var(--font-ui);
+      cursor: pointer;
+      transition: all var(--transition-base);
+    }
+
+    .join-btn:hover {
+      background: var(--gradient-gold);
+      color: #0D0D1A;
+      border-color: transparent;
+      box-shadow: 0 4px 16px rgba(255,165,0,0.3);
+      transform: scale(1.02);
+    }
+
+    /* ── FEATURED CARD ───────────────────────────────────────── */
+    .room-card.featured {
+      grid-column: span 2;
+      background: linear-gradient(135deg, rgba(255,215,0,0.06) 0%, rgba(139,92,246,0.06) 100%);
+      border-color: rgba(255,215,0,0.18);
+    }
+
+    .room-card.featured .room-title { font-size: 1.3rem; }
+
+    /* ── CREATE ROOM MODAL ───────────────────────────────────── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(8px);
+      z-index: var(--z-modal);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-6);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity var(--transition-base);
+    }
+
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .modal {
+      width: 100%;
+      max-width: 520px;
+      background: var(--bg-card);
+      border: var(--border-default);
+      border-radius: var(--radius-2xl);
+      padding: var(--space-8);
+      transform: scale(0.9) translateY(20px);
+      transition: all var(--transition-spring);
+      box-shadow: 0 40px 80px rgba(0,0,0,0.6), 0 0 60px rgba(255,215,0,0.08);
+    }
+
+    .modal-overlay.open .modal {
+      transform: scale(1) translateY(0);
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--space-6);
+    }
+
+    .modal-title {
+      font-size: 1.4rem;
+      font-weight: 800;
+      font-family: var(--font-ui);
+    }
+
+    .modal-close {
+      width: 36px; height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-sm);
+      background: rgba(255,255,255,0.05);
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .modal-close:hover { color: var(--neon-pink); background: rgba(255,45,120,0.1); }
+
+    .form-group { margin-bottom: var(--space-5); }
+    .form-label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      font-family: var(--font-ui);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: var(--space-2);
+    }
+
+    .lang-selector {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--space-2);
+    }
+
+    .lang-option {
+      padding: var(--space-3);
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(255,215,0,0.1);
+      background: rgba(255,215,0,0.03);
+      text-align: center;
+      cursor: pointer;
+      transition: all var(--transition-base);
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      font-family: var(--font-mono);
+    }
+
+    .lang-option:hover, .lang-option.selected {
+      border-color: rgba(255,215,0,0.35);
+      background: rgba(255,215,0,0.1);
+      color: var(--gold-300);
+    }
+
+    .privacy-toggle {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-3);
+    }
+
+    .privacy-opt {
+      padding: var(--space-4);
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(255,215,0,0.1);
+      cursor: pointer;
+      transition: all var(--transition-base);
+      text-align: center;
+    }
+
+    .privacy-opt.selected {
+      border-color: rgba(255,215,0,0.35);
+      background: rgba(255,215,0,0.08);
+    }
+
+    .privacy-opt .icon { font-size: 1.4rem; margin-bottom: 4px; }
+    .privacy-opt .label { font-size: 0.82rem; font-weight: 600; font-family: var(--font-ui); }
+    .privacy-opt .desc { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; }
+
+    /* ── RESPONSIVE ──────────────────────────────────────────── */
+    @media (max-width: 1200px) {
+      .stats-strip { grid-template-columns: repeat(2,1fr); }
+    }
+    @media (max-width: 900px) {
+      .page-grid { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      .rooms-grid { grid-template-columns: 1fr; }
+      .room-card.featured { grid-column: span 1; }
+    }
+    @media (max-width: 600px) {
+      .main-content { padding: var(--space-5); }
+      .stats-strip { grid-template-columns: repeat(2,1fr); gap: var(--space-3); }
+      .rooms-hero { flex-direction: column; }
+      .topbar-center { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<div class="page-grid">
+
+  <!-- ══ TOPBAR ══════════════════════════════════════════════ -->
+  <header class="topbar">
+    <a href="index.html" class="topbar-logo">
+      <div class="topbar-logo-icon">⚡</div>
+      <div class="topbar-logo-text">
+        <span class="text-gradient-gold">Sync</span><span style="color:var(--text-primary)">Kode</span>
+      </div>
+    </a>
+
+    <div class="topbar-center">
+      <div class="search-bar">
+        <span class="material-icons-round" style="color:var(--text-muted);font-size:18px">search</span>
+        <input class="search-input" type="text" placeholder="Search rooms, languages, people..." oninput="filterRooms(this.value)" />
+        <kbd style="font-size:0.68rem;color:var(--text-muted);background:rgba(255,255,255,0.05);padding:2px 6px;border-radius:4px;border:1px solid rgba(255,255,255,0.08)">⌘K</kbd>
+      </div>
+    </div>
+
+    <div class="topbar-actions">
+      <button class="notif-btn" data-tooltip="Notifications" onclick="showToast('3 new room invitations!', 'info')">
+        <span class="material-icons-round" style="font-size:20px">notifications</span>
+        <span class="notif-badge">3</span>
+      </button>
+      <button class="notif-btn" data-tooltip="Settings">
+        <span class="material-icons-round" style="font-size:20px">settings</span>
+      </button>
+      <div class="user-menu" onclick="window.location.href='profile.html'">
+        <div class="avatar avatar-sm" style="background:var(--gradient-gold)">AJ</div>
+        <div>
+          <div class="user-name">Alex Johnson</div>
+          <div class="user-role">Pro Coder ✦</div>
+        </div>
+        <span class="material-icons-round" style="font-size:16px;color:var(--text-muted)">expand_more</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ══ SIDEBAR ══════════════════════════════════════════════ -->
+  <aside class="sidebar">
+    <div>
+      <div class="sidebar-section-title">Main</div>
+      <a class="nav-item active" href="rooms.html">
+        <span class="material-icons-round" style="font-size:20px">grid_view</span>
+        All Rooms
+        <span class="nav-count">12</span>
+      </a>
+      <a class="nav-item" href="#">
+        <span class="material-icons-round" style="font-size:20px">star</span>
+        My Rooms
+        <span class="nav-count">3</span>
+      </a>
+      <a class="nav-item" href="#">
+        <span class="material-icons-round" style="font-size:20px">history</span>
+        Recent
+        <span class="nav-count">5</span>
+      </a>
+      <a class="nav-item" href="#">
+        <span class="material-icons-round" style="font-size:20px">bookmark</span>
+        Bookmarked
+        <span class="nav-count">2</span>
+      </a>
+    </div>
+
+    <div>
+      <div class="sidebar-section-title">Categories</div>
+      <a class="nav-item" href="#">
+        <span style="font-size:16px">🐍</span>
+        Python
+        <span class="nav-count">4</span>
+      </a>
+      <a class="nav-item" href="#">
+        <span style="font-size:16px">⚛️</span>
+        React / JS
+        <span class="nav-count">3</span>
+      </a>
+      <a class="nav-item" href="#">
+        <span style="font-size:16px">☕</span>
+        Java
+        <span class="nav-count">2</span>
+      </a>
+      <a class="nav-item" href="#">
+        <span style="font-size:16px">🦀</span>
+        Rust
+        <span class="nav-count">1</span>
+      </a>
+      <a class="nav-item" href="#">
+        <span style="font-size:16px">🐹</span>
+        Go
+        <span class="nav-count">2</span>
+      </a>
+    </div>
+
+    <div class="sidebar-stats">
+      <div style="font-size:0.78rem;font-weight:700;color:var(--gold-300);margin-bottom:var(--space-3)">⚡ Live Stats</div>
+      <div class="stat-row">
+        <span class="stat-label">Active users</span>
+        <span class="stat-value green">2,841</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Open rooms</span>
+        <span class="stat-value gold">147</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">AI queries/hr</span>
+        <span class="stat-value blue">18.2k</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ══ MAIN CONTENT ════════════════════════════════════════ -->
+  <main class="main-content">
+    <div class="content-inner">
+
+      <!-- Hero Row -->
+      <div class="rooms-hero">
+        <div class="rooms-hero-left">
+          <div class="rooms-hero-label">
+            <span class="online-dot" style="width:8px;height:8px"></span>
+            147 active rooms right now
+          </div>
+          <h1 class="rooms-title">
+            <span class="text-gradient-gold">Coding</span> Rooms
+          </h1>
+          <p class="rooms-subtitle">Join a live session or create your own collaborative workspace</p>
+        </div>
+        <button class="create-room-btn" onclick="openModal()">
+          <span class="material-icons-round">add</span>
+          Create New Room
+        </button>
+      </div>
+
+      <!-- Stats Strip -->
+      <div class="stats-strip">
+        <div class="stat-card">
+          <div class="stat-num text-gradient-gold">2,841</div>
+          <div style="font-size:0.75rem;color:var(--text-muted);display:flex;align-items:center;gap:4px">
+            <span class="material-icons-round" style="font-size:14px;color:var(--neon-green)">trending_up</span>
+            +128 from yesterday
+          </div>
+          <div class="stat-desc" style="margin-top:4px">Active Coders Online</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" style="color:var(--neon-violet)">147</div>
+          <div style="font-size:0.75rem;color:var(--text-muted)">30 with AI enabled</div>
+          <div class="stat-desc" style="margin-top:4px">Live Coding Rooms</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" style="color:var(--neon-blue)">18.2k</div>
+          <div style="font-size:0.75rem;color:var(--text-muted)">Avg response: 0.4s</div>
+          <div class="stat-desc" style="margin-top:4px">AI Assists /hr</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num text-gradient-gold">99.9<span style="font-size:1rem">%</span></div>
+          <div style="font-size:0.75rem;color:var(--text-muted)">All systems green</div>
+          <div class="stat-desc" style="margin-top:4px">Platform Uptime</div>
+        </div>
+      </div>
+
+      <!-- Filter Bar -->
+      <div class="filter-bar">
+        <button class="filter-chip active" onclick="filterByTag(this,'all')">All Rooms</button>
+        <button class="filter-chip" onclick="filterByTag(this,'live')">🟢 Live</button>
+        <button class="filter-chip" onclick="filterByTag(this,'ai')">🤖 AI-Powered</button>
+        <button class="filter-chip" onclick="filterByTag(this,'open')">🔓 Open</button>
+        <button class="filter-chip" onclick="filterByTag(this,'beginner')">🌱 Beginner</button>
+        <button class="filter-chip" onclick="filterByTag(this,'hackathon')">🏆 Hackathon</button>
+        <div class="filter-divider"></div>
+        <select class="sort-select" onchange="showToast('Sorted by '+this.options[this.selectedIndex].text,'info',2000)">
+          <option>Sort: Most Active</option>
+          <option>Sort: Newest</option>
+          <option>Sort: Most Members</option>
+          <option>Sort: AI Priority</option>
+        </select>
+      </div>
+
+      <!-- Rooms Grid -->
+      <div class="rooms-grid" id="roomsGrid">
+
+        <!-- FEATURED CARD -->
+        <div class="room-card featured" style="--card-accent: var(--gradient-aurora);" onclick="joinRoom('nexus-hackathon')">
+          <div class="card-top">
+            <div class="room-icon-wrap" style="background:rgba(255,215,0,0.12)">
+              🏆
+              <div class="room-status-dot status-live"></div>
+            </div>
+            <div class="card-badges">
+              <span class="badge badge-gold">★ Featured</span>
+              <span class="badge badge-green">LIVE</span>
+            </div>
+          </div>
+          <div>
+            <div class="room-title">SyncKode Hackathon — Build with AI</div>
+            <div class="room-desc">Global 48-hour hackathon. 320+ coders building the future with AI-assisted tools. Real cash prizes! Join the biggest coding challenge of 2026.</div>
+          </div>
+          <div class="lang-tags">
+            <span class="lang-tag">Python</span>
+            <span class="lang-tag">TypeScript</span>
+            <span class="lang-tag">React</span>
+            <span class="lang-tag">Rust</span>
+            <span class="lang-tag">AI / ML</span>
+          </div>
+          <div class="card-bottom">
+            <div style="display:flex;align-items:center;gap:var(--space-4)">
+              <div class="user-avatars">
+                <div class="avatar avatar-sm" style="background:linear-gradient(135deg,#FFD700,#FF6B1A)">AJ</div>
+                <div class="avatar avatar-sm" style="background:linear-gradient(135deg,#8B5CF6,#00D4FF)">SK</div>
+                <div class="avatar avatar-sm" style="background:linear-gradient(135deg,#00FF9F,#00D4FF)">ML</div>
+                <div class="avatar avatar-sm" style="background:linear-gradient(135deg,#FF2D78,#FF6B1A)">RP</div>
+                <div class="avatar avatar-sm" style="background:var(--bg-elevated);color:var(--text-muted);border-color:rgba(255,215,0,0.2)">+316</div>
+              </div>
+              <span class="coder-count">320 coders active</span>
+            </div>
+            <div style="display:flex;gap:var(--space-3);align-items:center">
+              <div class="ai-badge"><span class="material-icons-round" style="font-size:13px">smart_toy</span> AI Active</div>
+              <button class="join-btn">Join Room →</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- CARD 2 -->
+        <div class="room-card" style="--card-accent: linear-gradient(90deg,#8B5CF6,#00D4FF);" onclick="joinRoom('react-workshop')">
+          <div class="card-top">
+            <div class="room-icon-wrap" style="background:rgba(0,212,255,0.1)">
+              ⚛️
+              <div class="room-status-dot status-live"></div>
+            </div>
+            <div class="card-badges">
+              <span class="badge badge-blue">LIVE</span>
+            </div>
+          </div>
+          <div>
+            <div class="room-title">React 19 Deep Dive Workshop</div>
+            <div class="room-desc">Exploring Server Components, concurrent features & the new compiler. Build a full-stack app live with AI pair programming.</div>
+          </div>
+          <div class="lang-tags">
+            <span class="lang-tag">React</span>
+            <span class="lang-tag">TypeScript</span>
+            <span class="lang-tag">Next.js</span>
+          </div>
+          <div class="card-bottom">
+            <div class="user-avatars">
+              <div class="avatar avatar-sm" style="background:linear-gradient(135deg,#00D4FF,#8B5CF6)">RS</div>
+              <div class="avatar avatar-sm" style="background:linear-gradient(135deg,#FFD700,#FF6B1A)">TY</div>
+              <div class="avatar avatar-sm" style="background:var(--bg-elevated);color:var(--text-muted)">+6</div>
+            </div>
+            <button class="join-btn" onclick="joinRoom('react-workshop')">Join Room →</button>
+          </div>
+        </div>
+
+        <!-- CARD 3 -->
+        <div class="room-card" style="--card-accent: linear-gradient(90deg,#00FF9F,#00D4FF);" onclick="joinRoom('python-ml')">
+          <div class="card-top">
+            <div class="room-icon-wrap" style="background:rgba(0,255,159,0.1)">
+              🐍
+              <div class="room-status-dot status-live"></div>
+            </div>
+            <div class="card-badges">
+              <span class="badge badge-green">HOT 🔥</span>
+            </div>
+          </div>
+          <div>
+            <div class="room-title">Python ML & LLM Playground</div>
+            <div class="room-desc">Fine-tuning models, RAG pipelines, and agentic workflows with PyTorch + LangChain. AI-first collaborative environment.</div>
+          </div>
+          <div class="lang-tags">
+            <span class="lang-tag">Python</span>
+            <span class="lang-tag">PyTorch</span>
+            <span class="lang-tag">LangChain</span>
+          </div>
+          <div class="card-bottom">
+            <div class="user-avatars">
+              <div class="avatar avatar-sm" style="background:linear-gradient(135deg,#00FF9F,#00D4FF)">PN</div>
+              <div class="avatar avatar-sm" style="background:linear-gradient(135deg,#FF2D78,#FF6B1A)">VK</div>
+              <div class="avatar avatar-sm" style="background:var(--bg-elevated);color:var(--text-muted)">+11</div>
+            </div>
+            <button class="join-btn">Join Room →</button>
+          </div>
+        </div>
+
+        <!-- CARD 4 -->
+        <div class="room-card" style="--card-accent: linear-gradient(90deg,#FF6B1A,#FFD700);" onclick="joinRoom('rust-systems')">
+          <div class="card-top">
+            <div class="room-icon-wrap" style="background:rgba(255,107,26,0.12)">
+              🦀
+              <div class="room-status-dot status-idle"></div>
+            </div>
+            <div class="card-badges">
+              <span class="badge" style="background:rgba(255,107,26,0.12);color:#FF6B1A;border:1px solid rgba(255,107,26,0.3)">IDLE</span>
+            </div>
+          </div>
+          <div>
+            <div class="room-title">Rust Systems Programming</div>
+            <div class="room-desc">Memory-safe systems code, async Rust with Tokio, writing performant APIs. Beginner-friendly environment with AI mentor.</div>
+          </div>
+          <div class="lang-tags">
+            <span class="lang-tag">Rust</span>
+            <span class="lang-tag">Tokio</span>
+            <span class="lang-tag">WASM</span>
+          </div>
+          <div class="card-bottom">
+            <div class="user-avatars">
+              <div class="avatar avatar-sm" style="background:linear-gradient(135deg,#FF6B1A,#FFD700)">CR</div>
+              <div class="avatar avatar-sm" style="background:var(--bg-elevated);color:var(--text-muted)">+3</div>
+            </div>
+            <button class="join-btn">Join Room →</button>
+          </div>
+        </div>
+
+        <!-- CARD 5 -->
+        <div class="room-card" style="--card-accent: linear-gradient(90deg,#FF2D78,#8B5CF6);" onclick="joinRoom('algo-dsa')">
+          <div class="card-top">
+            <div class="room-icon-wrap" style="background:rgba(255,45,120,0.1)">
+              🧠
+              <div class="room-status-dot status-live"></div>
+            </div>
+            <div class="card-badges">
+              <span class="badge badge-violet">AI MENTOR</span>
+            </div>
+          </div>
+          <div>
+            <div class="room-title">DSA Interview Prep 2026</div>
+            <div class="room-desc">LeetCode-style challenges with real-time AI hints, optimality analysis and O(n) suggestions. FAANG prep together.</div>
+          </div>
+          <div class="lang-tags">
+            <span class="lang-tag">C++</span>
+            <span class="lang-tag">Python</span>
+            <span class="lang-tag">Java</span>
+          </div>
+          <div class="card-bottom">
+            <div class="user-avatars">
+              <div class="avatar avatar-sm" style="background:linear-gradient(135deg,#FF2D78,#8B5CF6)">DP</div>
+              <div class="avatar avatar-sm" style="background:linear-gradient(135deg,#FFD700,#FF6B1A)">AR</div>
+              <div class="avatar avatar-sm" style="background:var(--bg-elevated);color:var(--text-muted)">+19</div>
+            </div>
+            <button class="join-btn">Join Room →</button>
+          </div>
+        </div>
+
+        <!-- CARD 6 -->
+        <div class="room-card" style="--card-accent: var(--gradient-gold);" onclick="joinRoom('go-microservices')">
+          <div class="card-top">
+            <div class="room-icon-wrap" style="background:rgba(0,212,255,0.1)">
+              🐹
+              <div class="room-status-dot status-live"></div>
+            </div>
+            <div class="card-badges">
+              <span class="badge badge-gold">OPEN</span>
+            </div>
+          </div>
+          <div>
+            <div class="room-title">Go Microservices & gRPC</div>
+            <div class="room-desc">Building production-ready microservices with Go, gRPC, Kubernetes and distributed tracing. Architecture deep-dive.</div>
+          </div>
+          <div class="lang-tags">
+            <span class="lang-tag">Go</span>
+            <span class="lang-tag">gRPC</span>
+            <span class="lang-tag">Docker</span>
+            <span class="lang-tag">K8s</span>
+          </div>
+          <div class="card-bottom">
+            <div class="user-avatars">
+              <div class="avatar avatar-sm" style="background:var(--gradient-gold)">GM</div>
+              <div class="avatar avatar-sm" style="background:linear-gradient(135deg,#00FF9F,#00D4FF)">SP</div>
+              <div class="avatar avatar-sm" style="background:var(--bg-elevated);color:var(--text-muted)">+7</div>
+            </div>
+            <button class="join-btn">Join Room →</button>
+          </div>
+        </div>
+
+      </div>
+      <!-- END rooms grid -->
+
+    </div>
+  </main>
+
+</div>
+<!-- END page-grid -->
+
+<!-- ══ CREATE ROOM MODAL ══════════════════════════════════════ -->
+<div class="modal-overlay" id="createModal" onclick="closeModalOnOverlay(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title">
+        <span class="text-gradient-gold">Create</span> New Room
+      </h2>
+      <button class="modal-close" onclick="closeModal()">
+        <span class="material-icons-round">close</span>
+      </button>
+    </div>
+
+    <div class="form-group">
+      <div class="form-label">Room Name</div>
+      <input type="text" class="input" placeholder="e.g. Full-Stack Sprint #42" id="roomName" />
+    </div>
+
+    <div class="form-group">
+      <div class="form-label">Description</div>
+      <textarea class="input" rows="2" placeholder="What will you build today?" id="roomDesc" style="resize:none;min-height:72px"></textarea>
+    </div>
+
+    <div class="form-group">
+      <div class="form-label">Primary Languages</div>
+      <div class="lang-selector">
+        <div class="lang-option" onclick="toggleLang(this)">🐍 Python</div>
+        <div class="lang-option" onclick="toggleLang(this)">⚛️ React</div>
+        <div class="lang-option" onclick="toggleLang(this)">🟨 JavaScript</div>
+        <div class="lang-option" onclick="toggleLang(this)">🔷 TypeScript</div>
+        <div class="lang-option" onclick="toggleLang(this)">☕ Java</div>
+        <div class="lang-option" onclick="toggleLang(this)">🦀 Rust</div>
+        <div class="lang-option" onclick="toggleLang(this)">🐹 Go</div>
+        <div class="lang-option" onclick="toggleLang(this)">C++ 🔮</div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <div class="form-label">Privacy Setting</div>
+      <div class="privacy-toggle">
+        <div class="privacy-opt selected" onclick="selectPrivacy(this)">
+          <div class="icon">🔓</div>
+          <div class="label">Public</div>
+          <div class="desc">Anyone can join</div>
+        </div>
+        <div class="privacy-opt" onclick="selectPrivacy(this)">
+          <div class="icon">🔒</div>
+          <div class="label">Private</div>
+          <div class="desc">Invite only</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:var(--space-3)">
+      <button class="btn btn-ghost w-full" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-gold w-full" onclick="createRoom()" style="justify-content:center">
+        <span class="material-icons-round">rocket_launch</span>
+        Launch Room
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  /* ── Modal ─────────────────────────────────────────────────── */
+  function openModal() {
+    document.getElementById('createModal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeModal() {
+    document.getElementById('createModal').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  function closeModalOnOverlay(e) {
+    if (e.target === document.getElementById('createModal')) closeModal();
+  }
+
+  /* ── Create Room ────────────────────────────────────────────── */
+  function createRoom() {
+    const name = document.getElementById('roomName').value.trim();
+    if (!name) { showToast('Please enter a room name!', 'error'); return; }
+    closeModal();
+    showToast(`Room "${name}" created! Redirecting...`, 'success');
+    setTimeout(() => window.location.href = 'room.html', 1200);
+  }
+
+  /* ── Join Room ──────────────────────────────────────────────── */
+  function joinRoom(id) {
+    showToast('Joining room... Connecting to server ⚡', 'info');
+    setTimeout(() => window.location.href = 'room.html', 1000);
+  }
+
+  /* ── Lang toggle ────────────────────────────────────────────── */
+  function toggleLang(el) {
+    el.classList.toggle('selected');
+  }
+
+  /* ── Privacy toggle ─────────────────────────────────────────── */
+  function selectPrivacy(el) {
+    document.querySelectorAll('.privacy-opt').forEach(o => o.classList.remove('selected'));
+    el.classList.add('selected');
+  }
+
+  /* ── Filter Chips ───────────────────────────────────────────── */
+  function filterByTag(el, tag) {
+    document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    showToast(`Showing: ${el.textContent} rooms`, 'info', 2000);
+  }
+
+  /* ── Search ─────────────────────────────────────────────────── */
+  function filterRooms(q) {
+    if (!q) return;
+    const cards = document.querySelectorAll('.room-card');
+    cards.forEach(card => {
+      const text = card.textContent.toLowerCase();
+      card.style.opacity = text.includes(q.toLowerCase()) ? '1' : '0.35';
+    });
+    if (!q) cards.forEach(c => c.style.opacity = '1');
+  }
+
+  /* ── Toast ──────────────────────────────────────────────────── */
+  function showToast(message, type = 'info', duration = 3500) {
+    const container = document.getElementById('toastContainer');
+    const icons = { info: 'info', success: 'check_circle', error: 'error', warning: 'warning' };
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `
+      <span class="material-icons-round" style="color:${type==='success'?'var(--neon-green)':type==='error'?'var(--neon-pink)':'var(--gold-300)'};font-size:20px">${icons[type]}</span>
+      <span style="flex:1;font-size:0.88rem">${message}</span>
+      <button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--text-muted);cursor:pointer">
+        <span class="material-icons-round" style="font-size:16px">close</span>
+      </button>`;
+    container.appendChild(toast);
+    setTimeout(() => { toast.style.opacity='0'; toast.style.transform='translateX(100%)'; toast.style.transition='all 0.4s ease'; setTimeout(()=>toast.remove(),400); }, duration);
+  }
+
+  /* ── Room card hover 3D tilt ─────────────────────────────── */
+  document.querySelectorAll('.room-card').forEach(card => {
+    card.addEventListener('mousemove', (e) => {
+      const rect = card.getBoundingClientRect();
+      const x = (e.clientX - rect.left) / rect.width - 0.5;
+      const y = (e.clientY - rect.top) / rect.height - 0.5;
+      card.style.transform = `translateY(-5px) rotateX(${-y*4}deg) rotateY(${x*4}deg)`;
+    });
+    card.addEventListener('mouseleave', () => {
+      card.style.transform = '';
+      card.style.transition = 'transform 0.4s ease';
+    });
+  });
+
+  /* ── Load theme ─────────────────────────────────────────────── */
+  const t = localStorage.getItem('nexus-theme');
+  if (t) document.documentElement.setAttribute('data-theme', t);
+</script>
+</body>
+</html>

@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SyncKode — React 19 Workshop</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <style>
+    /* ══ CSS VARIABLES ══════════════════════════════════════════ */
+    :root {
+      --bg-deep: #050508;
+      --bg-dark: #0A0A14;
+      --bg-card: #0F0F1C;
+      --bg-elevated: #161628;
+      --text-primary: #E8E8F0;
+      --text-secondary: #A0A0B8;
+      --text-muted: #555570;
+      --gold-300: #FFD700;
+      --gold-400: #FFC400;
+      --neon-violet: #8B5CF6;
+      --neon-blue: #00D4FF;
+      --neon-green: #00FF9F;
+      --neon-pink: #FF2D78;
+      --neon-orange: #FF6B1A;
+      --gradient-gold: linear-gradient(135deg, #FFD700, #FF6B1A);
+      --gradient-violet: linear-gradient(135deg, #8B5CF6, #00D4FF);
+      --border-default: 1px solid rgba(255,215,0,0.12);
+      --glass-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 30px rgba(255,215,0,0.04);
+      --radius-sm: 6px; --radius-md: 10px; --radius-lg: 14px;
+      --radius-xl: 18px; --radius-full: 9999px;
+      --font-mono: 'JetBrains Mono', 'Fira Kode', 'Cascadia Kode', monospace;
+      --font-ui: 'Inter', system-ui, sans-serif;
+      --font-body: 'Inter', system-ui, sans-serif;
+      --space-1: 4px; --space-2: 8px; --space-3: 12px;
+      --space-4: 16px; --space-5: 20px; --space-6: 24px;
+      --transition-fast: 0.15s ease; --transition-base: 0.25s ease;
+      --z-overlay: 100; --z-modal: 200;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ══ CRITICAL FIX: 100dvh fills the actual visible viewport ══ */
+    html {
+      height: 100dvh;
+      overflow: hidden;
+    }
+    body {
+      height: 100dvh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-deep);
+      color: var(--text-primary);
+      font-family: var(--font-body);
+    }
+
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,215,0,0.15); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,215,0,0.3); }
+
+    .avatar { border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-family: var(--font-ui); user-select: none; }
+    .avatar-sm { width: 28px; height: 28px; font-size: 0.65rem; }
+    .online-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--neon-green); box-shadow: 0 0 8px var(--neon-green); animation: pulse-dot 2s ease-in-out infinite; flex-shrink: 0; }
+    @keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:0.5} }
+    .badge-violet { background: rgba(139,92,246,0.15); border: 1px solid rgba(139,92,246,0.3); color: var(--neon-violet); border-radius: var(--radius-full); padding: 3px 8px; font-size: 0.7rem; font-weight: 700; }
+    .text-gradient-gold { background: var(--gradient-gold); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .toast-container { position: fixed; top: 16px; right: 16px; z-index: 999; display: flex; flex-direction: column; gap: 8px; }
+
+    @keyframes slide-in { from{transform:translateX(100%);opacity:0} to{transform:translateX(0);opacity:1} }
+    @keyframes slide-up  { from{transform:translateY(10px);opacity:0} to{transform:translateY(0);opacity:1} }
+    @keyframes scale-in  { from{transform:scale(0.9);opacity:0} to{transform:scale(1);opacity:1} }
+    @keyframes float     { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+    @keyframes wave-ring { 0%{transform:scale(1);opacity:0.6} 100%{transform:scale(1.6);opacity:0} }
+
+    /* ══ TOPBAR ══════════════════════════════════════════════════ */
+    .room-topbar {
+      height: 52px; flex-shrink: 0;
+      display: flex; align-items: center; gap: var(--space-3);
+      padding: 0 var(--space-4); background: var(--bg-deep);
+      border-bottom: 1px solid rgba(255,215,0,0.1); z-index: var(--z-overlay);
+    }
+    .topbar-logo-sm { display: flex; align-items: center; gap: var(--space-2); text-decoration: none; padding-right: var(--space-4); border-right: 1px solid rgba(255,215,0,0.1); }
+    .logo-icon-sm { width: 28px; height: 28px; background: var(--gradient-gold); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; color: #0D0D1A; box-shadow: 0 0 12px rgba(255,165,0,0.25); }
+    .room-title-bar { display: flex; flex-direction: column; justify-content: center; }
+    .room-name { font-size: 0.9rem; font-weight: 700; font-family: var(--font-ui); display: flex; align-items: center; gap: 6px; }
+    .room-breadcrumb { font-size: 0.7rem; color: var(--text-muted); }
+    .topbar-sep { width: 1px; height: 24px; background: rgba(255,215,0,0.1); margin: 0 var(--space-2); }
+    .editor-tabs { display: flex; align-items: center; gap: 2px; flex: 1; overflow-x: auto; scrollbar-width: none; }
+    .editor-tabs::-webkit-scrollbar { display: none; }
+    .etab { display: flex; align-items: center; gap: var(--space-2); padding: 6px 14px; border-radius: var(--radius-sm); font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-muted); cursor: pointer; transition: all var(--transition-fast); white-space: nowrap; border: 1px solid transparent; position: relative; flex-shrink: 0; }
+    .etab:hover { background: rgba(255,215,0,0.06); color: var(--text-secondary); }
+    .etab.active { background: rgba(255,215,0,0.1); color: var(--gold-300); border-color: rgba(255,215,0,0.2); }
+    .etab.active::after { content:''; position:absolute; bottom:-1px; left:0; right:0; height:2px; background:var(--gradient-gold); border-radius:1px; }
+    .tab-dot { width: 6px; height: 6px; border-radius: 50%; }
+    .tab-close { margin-left: 4px; width: 14px; height: 14px; border-radius: 50%; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity var(--transition-fast); color: var(--text-muted); }
+    .etab:hover .tab-close { opacity: 1; }
+    .tab-close:hover { background: rgba(255,45,120,0.2); color: var(--neon-pink); }
+    .tab-add-btn { padding: 4px 8px; border-radius: var(--radius-sm); background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1rem; transition: all var(--transition-fast); display: flex; align-items: center; }
+    .tab-add-btn:hover { color: var(--gold-300); background: rgba(255,215,0,0.08); }
+    .topbar-right { display: flex; align-items: center; gap: var(--space-2); margin-left: auto; flex-shrink: 0; }
+    .collab-users { display: flex; align-items: center; gap: 0; }
+    .collab-users .avatar { margin-left: -6px; border: 2px solid var(--bg-deep); cursor: pointer; transition: all 0.2s; }
+    .collab-users .avatar:first-child { margin-left: 0; }
+    .collab-users .avatar:hover { z-index: 10; transform: scale(1.15) translateY(-2px); }
+    .icon-btn { width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; border-radius: var(--radius-sm); background: rgba(255,215,0,0.04); border: 1px solid transparent; color: var(--text-secondary); cursor: pointer; transition: all var(--transition-fast); }
+    .icon-btn:hover { color: var(--gold-300); background: rgba(255,215,0,0.1); border-color: rgba(255,215,0,0.2); }
+    .run-btn { display: flex; align-items: center; gap: var(--space-2); padding: 6px 16px; background: var(--gradient-gold); border: none; border-radius: var(--radius-md); color: #0D0D1A; font-size: 0.82rem; font-weight: 700; font-family: var(--font-ui); cursor: pointer; transition: all var(--transition-base); box-shadow: 0 4px 16px rgba(255,165,0,0.25); }
+    .run-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(255,165,0,0.4); }
+
+    /* ══ WORKSPACE — CRITICAL FIX: flex:1 + min-height:0 ════════ */
+    .workspace {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: 50px 1fr 380px;
+      overflow: hidden;
+    }
+
+    /* ══ ACTIVITY BAR ════════════════════════════════════════════ */
+    .activity-bar { background: var(--bg-deep); border-right: 1px solid rgba(255,215,0,0.08); display: flex; flex-direction: column; align-items: center; padding: var(--space-3) 0; gap: var(--space-1); }
+    .act-btn { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: var(--radius-sm); color: var(--text-muted); cursor: pointer; transition: all var(--transition-fast); position: relative; }
+    .act-btn:hover { color: var(--text-primary); background: rgba(255,215,0,0.08); }
+    .act-btn.active { color: var(--gold-300); }
+    .act-btn.active::before { content:''; position:absolute; left:-8px; top:50%; transform:translateY(-50%); width:3px; height:60%; background:var(--gradient-gold); border-radius:2px; }
+    .act-sep { width: 28px; height: 1px; background: rgba(255,215,0,0.08); margin: var(--space-2) 0; }
+    .act-spacer { flex: 1; }
+
+    /* ══ EDITOR AREA — also needs min-height:0 ═══════════════════ */
+    .editor-area { display: flex; flex-direction: column; background: #0D0D18; overflow: hidden; position: relative; min-height: 0; }
+    .code-editor { flex: 1; min-height: 0; overflow: auto; display: flex; font-family: var(--font-mono); font-size: 0.82rem; line-height: 1.7; position: relative; }
+    .line-numbers { padding: var(--space-4) var(--space-3) var(--space-4) var(--space-4); color: var(--text-muted); text-align: right; user-select: none; min-width: 52px; border-right: 1px solid rgba(255,215,0,0.06); background: rgba(0,0,0,0.2); flex-shrink: 0; }
+    .ln { display: block; font-size: 0.75rem; opacity: 0.5; cursor: pointer; }
+    .ln:hover { opacity: 1; color: var(--gold-300); }
+    .ln.active { opacity: 1; color: var(--gold-400); }
+    .code-content { flex: 1; padding: var(--space-4) var(--space-6); outline: none; white-space: pre; overflow: visible; caret-color: var(--gold-300); color: var(--text-primary); position: relative; }
+
+    .kw  { color: #C792EA; font-weight: 600; }
+    .fn  { color: #82AAFF; }
+    .str { color: #C3E88D; }
+    .num { color: #F78C6C; }
+    .cmt { color: #545a85; font-style: italic; }
+    .cls { color: #FFCB6B; }
+    .op  { color: var(--gold-400); }
+    .tag { color: #FF5370; }
+    .attr{ color: #C792EA; }
+    .jsx { color: #89DDFF; }
+    .type{ color: var(--neon-blue); }
+    .prop{ color: #F07178; }
+
+    .cursors-overlay { position: absolute; pointer-events: none; top: 0; left: 0; z-index: 5; }
+    .live-cursor { position: absolute; display: flex; flex-direction: column; align-items: flex-start; }
+    .cursor-line { width: 2px; height: 1.4em; border-radius: 1px; animation: cursor-blink 1.2s ease-in-out infinite; }
+    @keyframes cursor-blink { 0%,100%{opacity:1} 50%{opacity:0} }
+    .cursor-tag { padding: 2px 8px; border-radius: 3px; font-size: 0.65rem; font-weight: 700; font-family: var(--font-ui); white-space: nowrap; margin-top: -1px; letter-spacing: 0.02em; }
+
+    .status-bar { height: 26px; background: rgba(255,215,0,0.06); border-top: 1px solid rgba(255,215,0,0.08); display: flex; align-items: center; padding: 0 var(--space-4); gap: var(--space-4); font-family: var(--font-mono); font-size: 0.7rem; color: var(--text-muted); flex-shrink: 0; }
+    .sb-item { display: flex; align-items: center; gap: 4px; cursor: pointer; transition: color 0.15s; }
+    .sb-item:hover { color: var(--gold-300); }
+    .sb-sep { width: 1px; height: 14px; background: rgba(255,215,0,0.1); }
+
+    /* ══ RIGHT PANEL — also needs min-height:0 ═══════════════════ */
+    .right-panel { display: flex; flex-direction: column; background: var(--bg-dark); border-left: 1px solid rgba(255,215,0,0.1); overflow: hidden; min-height: 0; }
+    .ai-chat-section { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; border-bottom: 1px solid rgba(255,215,0,0.1); }
+    .panel-header { height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 var(--space-4); background: rgba(255,215,0,0.04); border-bottom: 1px solid rgba(255,215,0,0.08); flex-shrink: 0; }
+    .panel-title { font-size: 0.82rem; font-weight: 700; font-family: var(--font-ui); display: flex; align-items: center; gap: var(--space-2); color: var(--text-secondary); }
+    .panel-title .material-icons-round { font-size: 16px; color: var(--gold-300); }
+
+    .chat-messages { flex: 1; min-height: 0; overflow-y: auto; padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-4); }
+    .msg { display: flex; gap: var(--space-3); animation: slide-up 0.3s ease both; }
+    .msg-avatar { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+    .msg-body { flex: 1; }
+    .msg-header { display: flex; align-items: baseline; gap: var(--space-2); margin-bottom: 4px; }
+    .msg-name { font-size: 0.8rem; font-weight: 700; font-family: var(--font-ui); }
+    .msg-time { font-size: 0.68rem; color: var(--text-muted); }
+    .msg-bubble { padding: var(--space-3) var(--space-4); border-radius: 0 var(--radius-md) var(--radius-md) var(--radius-md); font-size: 0.83rem; line-height: 1.55; max-width: 100%; }
+    .msg.user .msg-bubble { border-radius: var(--radius-md) 0 var(--radius-md) var(--radius-md); }
+    .msg.ai   .msg-bubble { background: linear-gradient(135deg,rgba(139,92,246,0.12),rgba(0,212,255,0.08)); border: 1px solid rgba(139,92,246,0.25); color: var(--text-primary); }
+    .msg.user .msg-bubble { background: rgba(255,215,0,0.08); border: 1px solid rgba(255,215,0,0.18); color: var(--text-primary); }
+    .msg.peer .msg-bubble { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); color: var(--text-secondary); }
+    .msg-bubble code { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,215,0,0.15); border-radius: 4px; padding: 1px 6px; font-size: 0.78rem; color: var(--gold-300); }
+    .msg-code { background: #0D0D18; border: 1px solid rgba(255,215,0,0.1); border-radius: var(--radius-md); margin-top: var(--space-2); overflow: hidden; }
+    .msg-code-header { display: flex; align-items: center; justify-content: space-between; padding: var(--space-2) var(--space-4); background: rgba(255,215,0,0.04); border-bottom: 1px solid rgba(255,215,0,0.08); }
+    .msg-code-lang { font-size: 0.7rem; color: var(--gold-400); font-family: var(--font-mono); }
+    .msg-code-copy { font-size: 0.7rem; color: var(--text-muted); background: none; border: none; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: color var(--transition-fast); }
+    .msg-code-copy:hover { color: var(--gold-300); }
+    .msg-code pre { padding: var(--space-3) var(--space-4); font-size: 0.76rem; line-height: 1.6; overflow-x: auto; color: var(--text-secondary); }
+
+    .ai-typing { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-3) var(--space-4); background: linear-gradient(135deg,rgba(139,92,246,0.08),rgba(0,212,255,0.05)); border: 1px solid rgba(139,92,246,0.15); border-radius: var(--radius-md); font-size: 0.8rem; color: var(--neon-violet); }
+    .typing-dots { display: flex; gap: 4px; }
+    .typing-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--neon-violet); animation: typing-bounce 1.2s ease-in-out infinite; }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typing-bounce { 0%,60%,100%{transform:scale(1);opacity:0.4} 30%{transform:scale(1.3);opacity:1} }
+
+    .context-chips { display: flex; flex-wrap: wrap; gap: var(--space-2); padding: var(--space-3) var(--space-4); border-top: 1px solid rgba(255,215,0,0.06); flex-shrink: 0; }
+    .ctx-chip { padding: 4px 12px; border-radius: var(--radius-full); font-size: 0.72rem; font-weight: 500; background: rgba(139,92,246,0.1); border: 1px solid rgba(139,92,246,0.2); color: var(--neon-violet); cursor: pointer; transition: all var(--transition-fast); }
+    .ctx-chip:hover { background: rgba(139,92,246,0.2); transform: translateY(-1px); }
+
+    .chat-input-row { padding: var(--space-3) var(--space-4); background: rgba(0,0,0,0.2); border-top: 1px solid rgba(255,215,0,0.06); flex-shrink: 0; }
+    .chat-input-wrap { display: flex; align-items: flex-end; gap: var(--space-2); background: rgba(255,215,0,0.04); border: 1px solid rgba(255,215,0,0.12); border-radius: var(--radius-lg); padding: var(--space-2) var(--space-3); transition: all var(--transition-base); }
+    .chat-input-wrap:focus-within { border-color: rgba(139,92,246,0.4); background: rgba(139,92,246,0.04); box-shadow: 0 0 20px rgba(139,92,246,0.08); }
+    .chat-textarea { flex: 1; background: none; border: none; outline: none; color: var(--text-primary); font-family: var(--font-body); font-size: 0.85rem; resize: none; max-height: 100px; overflow-y: auto; line-height: 1.5; }
+    .chat-textarea::placeholder { color: var(--text-muted); }
+    .send-btn { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: var(--gradient-gold); border: none; border-radius: var(--radius-sm); color: #0D0D1A; cursor: pointer; transition: all var(--transition-base); flex-shrink: 0; }
+    .send-btn:hover { transform: scale(1.1); box-shadow: 0 4px 12px rgba(255,165,0,0.4); }
+
+    .bottom-section { height: 160px; display: flex; flex-direction: column; flex-shrink: 0; }
+    .voice-panel { padding: var(--space-3) var(--space-4); flex: 1; }
+    .voice-bar { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-3); }
+    .voice-btn { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-4); border-radius: var(--radius-md); border: none; font-size: 0.8rem; font-weight: 600; font-family: var(--font-ui); cursor: pointer; transition: all var(--transition-base); }
+    .voice-btn.muted  { background: rgba(255,45,120,0.1); border: 1px solid rgba(255,45,120,0.25); color: var(--neon-pink); }
+    .voice-btn.active { background: rgba(0,255,159,0.1); border: 1px solid rgba(0,255,159,0.25); color: var(--neon-green); }
+    .voice-waveform { display: flex; align-items: center; gap: 3px; flex: 1; }
+    .wave-bar { width: 3px; border-radius: 2px; background: var(--neon-green); opacity: 0.5; animation: wave-animate var(--delay) ease-in-out infinite alternate; }
+    @keyframes wave-animate { from{height:4px;opacity:0.3} to{height:var(--max-h,24px);opacity:0.8} }
+    .shortcuts { display: grid; grid-template-columns: repeat(4,1fr); gap: var(--space-2); }
+    .shortcut { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: var(--space-2); border-radius: var(--radius-sm); background: rgba(255,215,0,0.04); border: 1px solid rgba(255,215,0,0.08); cursor: pointer; transition: all var(--transition-base); text-align: center; }
+    .shortcut:hover { background: rgba(255,215,0,0.1); border-color: rgba(255,215,0,0.2); transform: translateY(-2px); }
+    .shortcut .icon { font-size: 1.25rem; color: var(--gold-300); line-height: 1; }
+    .shortcut .label { font-size: 0.6rem; color: var(--text-muted); font-family: var(--font-ui); }
+
+    .ai-float { position: fixed; bottom: 80px; right: 400px; z-index: var(--z-modal); animation: slide-up 0.5s ease both; }
+    .ai-float-btn { width: 52px; height: 52px; border-radius: 50%; background: var(--gradient-violet); border: 2px solid rgba(139,92,246,0.5); display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 8px 24px rgba(139,92,246,0.4),0 0 40px rgba(139,92,246,0.15); animation: float 3s ease-in-out infinite; font-size: 1.3rem; transition: all var(--transition-base); }
+    .ai-float-btn:hover { transform: scale(1.1); box-shadow: 0 12px 36px rgba(139,92,246,0.5); }
+    .ai-float-pulse { position: absolute; inset: -4px; border-radius: 50%; border: 2px solid rgba(139,92,246,0.4); animation: wave-ring 2s ease-out infinite; }
+    .ai-float-popup { position: absolute; bottom: calc(100% + 12px); right: 0; width: 280px; background: var(--bg-card); border: var(--border-default); border-radius: var(--radius-xl); padding: var(--space-4); box-shadow: 0 20px 60px rgba(0,0,0,0.5),0 0 30px rgba(139,92,246,0.1); display: none; }
+    .ai-float-popup.visible { display: block; animation: scale-in 0.3s cubic-bezier(0.34,1.56,0.64,1) both; }
+    .ai-popup-title { font-size: 0.82rem; font-weight: 700; font-family: var(--font-ui); color: var(--neon-violet); margin-bottom: var(--space-3); display: flex; align-items: center; gap: var(--space-2); }
+    .ai-suggestion { padding: var(--space-3); background: rgba(139,92,246,0.08); border: 1px solid rgba(139,92,246,0.15); border-radius: var(--radius-md); margin-bottom: var(--space-2); cursor: pointer; transition: all var(--transition-base); font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4; }
+    .ai-suggestion:hover { background: rgba(139,92,246,0.15); color: var(--text-primary); transform: translateX(4px); }
+    .ai-suggestion strong { color: var(--neon-violet); }
+    .ai-suggestion code { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,215,0,0.15); border-radius: 4px; padding: 1px 5px; font-size: 0.75rem; color: var(--gold-300); }
+
+    .peers-panel { position: fixed; top: 60px; right: 394px; background: var(--bg-card); border: var(--border-default); border-radius: var(--radius-xl); padding: var(--space-4); width: 200px; z-index: var(--z-overlay); box-shadow: var(--glass-shadow); display: none; }
+    .peers-panel.visible { display: block; animation: scale-in 0.3s ease both; }
+    .peer-row { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-2) 0; }
+    .peer-row:not(:last-child) { border-bottom: 1px solid rgba(255,215,0,0.06); }
+    .peer-name { font-size: 0.82rem; font-weight: 600; }
+    .peer-status { font-size: 0.68rem; color: var(--text-muted); }
+
+    /* ══ RESPONSIVE ══════════════════════════════════════════════ */
+    @media (max-width: 1100px) { .workspace { grid-template-columns: 50px 1fr 320px; } }
+    @media (max-width: 768px) {
+      .workspace { grid-template-columns: 0 1fr; }
+      .activity-bar { display: none; }
+      .right-panel { display: none; }
+      .ai-float { right: var(--space-5); }
+    }
+    @media (max-width: 600px) { .editor-tabs { display: none; } .room-topbar { gap: var(--space-2); } }
+  </style>
+</head>
+<body>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ══ TOPBAR ════════════════════════════════════════════════ -->
+<header class="room-topbar">
+  <a href="rooms.html" class="topbar-logo-sm">
+    <div class="logo-icon-sm">⚡</div>
+    <span style="font-family:var(--font-ui);font-size:0.9rem;font-weight:800" class="text-gradient-gold">Sync</span>
+  </a>
+  <div class="room-title-bar">
+    <div class="room-name">
+      <span class="online-dot" style="width:7px;height:7px"></span>
+      React 19 Workshop
+    </div>
+    <div class="room-breadcrumb">
+      <span class="material-icons-round" style="font-size:10px;vertical-align:middle">group</span>
+      8 coders · AI active
+    </div>
+  </div>
+  <div class="topbar-sep"></div>
+  <div class="editor-tabs" id="editorTabs">
+    <div class="etab active" onclick="switchTab(this,'App.tsx')">
+      <span class="tab-dot" style="background:#00D4FF"></span>App.tsx
+      <span class="tab-close material-icons-round" style="font-size:12px" onclick="closeTab(event,this)">close</span>
+    </div>
+    <div class="etab" onclick="switchTab(this,'server.ts')">
+      <span class="tab-dot" style="background:#C792EA"></span>server.ts
+      <span class="tab-close material-icons-round" style="font-size:12px" onclick="closeTab(event,this)">close</span>
+    </div>
+    <div class="etab" onclick="switchTab(this,'api.ts')">
+      <span class="tab-dot" style="background:#FFD700"></span>api.ts
+      <span class="tab-close material-icons-round" style="font-size:12px" onclick="closeTab(event,this)">close</span>
+    </div>
+    <div class="etab" onclick="switchTab(this,'styles.css')">
+      <span class="tab-dot" style="background:#FF2D78"></span>styles.css
+      <span class="tab-close material-icons-round" style="font-size:12px" onclick="closeTab(event,this)">close</span>
+    </div>
+    <button class="tab-add-btn" onclick="addTab()">
+      <span class="material-icons-round" style="font-size:18px">add</span>
+    </button>
+  </div>
+  <div class="topbar-right">
+    <div class="collab-users">
+      <div class="avatar avatar-sm" style="background:linear-gradient(135deg,#FFD700,#FF6B1A)">AJ</div>
+      <div class="avatar avatar-sm" style="background:linear-gradient(135deg,#8B5CF6,#00D4FF)">SK</div>
+      <div class="avatar avatar-sm" style="background:linear-gradient(135deg,#00FF9F,#00D4FF)">ML</div>
+      <div class="avatar avatar-sm" style="background:linear-gradient(135deg,#FF2D78,#FF6B1A)">RP</div>
+      <div class="avatar avatar-sm" style="background:var(--bg-elevated);color:var(--text-muted);border:1px solid rgba(255,215,0,0.2);cursor:pointer" onclick="togglePeers()">+4</div>
+    </div>
+    <div class="topbar-sep"></div>
+    <div class="icon-btn" onclick="showToast('Terminal: integrated terminal coming soon!','info')"><span class="material-icons-round" style="font-size:18px">terminal</span></div>
+    <div class="icon-btn" onclick="showToast('Git: commit history panel opening...','info')"><span class="material-icons-round" style="font-size:18px">account_tree</span></div>
+    <div class="icon-btn" onclick="copyRoomLink()"><span class="material-icons-round" style="font-size:18px">share</span></div>
+    <div class="icon-btn"><span class="material-icons-round" style="font-size:18px">tune</span></div>
+    <button class="run-btn" onclick="runCode()">
+      <span class="material-icons-round" style="font-size:16px">play_arrow</span>Run
+    </button>
+  </div>
+</header>
+
+<!-- ══ WORKSPACE ════════════════════════════════════════════ -->
+<div class="workspace">
+
+  <!-- Activity Bar -->
+  <div class="activity-bar">
+    <div class="act-btn active"><span class="material-icons-round" style="font-size:20px">folder_open</span></div>
+    <div class="act-btn"><span class="material-icons-round" style="font-size:20px">search</span></div>
+    <div class="act-btn"><span class="material-icons-round" style="font-size:20px">account_tree</span></div>
+    <div class="act-btn"><span class="material-icons-round" style="font-size:20px">extension</span></div>
+    <div class="act-sep"></div>
+    <div class="act-btn"><span class="material-icons-round" style="font-size:20px">bug_report</span></div>
+    <div class="act-spacer"></div>
+    <div class="act-btn"><span class="material-icons-round" style="font-size:20px">settings</span></div>
+  </div>
+
+  <!-- Kode Editor -->
+  <div class="editor-area" id="editorArea">
+    <div class="code-editor" id="codeEditor">
+      <div class="line-numbers" id="lineNumbers"></div>
+      <div class="code-content" id="codeContent" contenteditable="true" spellcheck="false"
+           onkeydown="handleEditorKey(event)" oninput="onEditorInput()" onclick="onEditorClick()">
+<span class="cmt">// ╔══ SyncKode · React 19 · App.tsx ══════════════════════════╗</span>
+<span class="cmt">// ║  Collaborative session: 8 coders · AI Co-pilot active      ║</span>
+<span class="cmt">// ╚════════════════════════════════════════════════════════════╝</span>
+
+<span class="kw">import</span> React, { <span class="fn">useState</span>, <span class="fn">useEffect</span>, <span class="fn">useTransition</span> } <span class="kw">from</span> <span class="str">'react'</span>;
+<span class="kw">import</span> { <span class="cls">AIAssistant</span> } <span class="kw">from</span> <span class="str">'@SyncKode/ai-sdk'</span>;
+<span class="kw">import</span> { <span class="fn">fetchCodeReview</span>, <span class="fn">streamSuggestions</span> } <span class="kw">from</span> <span class="str">'./api'</span>;
+
+<span class="kw">interface</span> <span class="cls">CodeSession</span> {
+  id: <span class="type">string</span>;
+  participants: <span class="cls">Participant</span>[];
+  aiMode: <span class="str">'auto'</span> | <span class="str">'manual'</span> | <span class="str">'off'</span>;
+  language: <span class="type">string</span>;
+  createdAt: <span class="cls">Date</span>;
+}
+
+<span class="kw">const</span> <span class="fn">useCollaboration</span> = (sessionId: <span class="type">string</span>) => {
+  <span class="kw">const</span> [peers, setPeers] = <span class="fn">useState</span>&lt;<span class="cls">Peer</span>[]&gt;([]);
+  <span class="kw">const</span> [cursors, setCursors] = <span class="fn">useState</span>&lt;<span class="cls">Map</span>&gt;(<span class="kw">new</span> <span class="cls">Map</span>());
+  <span class="kw">const</span> [isPending, startTransition] = <span class="fn">useTransition</span>();
+
+  <span class="fn">useEffect</span>(() => {
+    <span class="kw">const</span> ws = <span class="kw">new</span> <span class="cls">WebSocket</span>(<span class="str">`wss://SyncKode.live/session/</span><span class="fn">${sessionId}</span><span class="str">`</span>);
+
+    ws.<span class="fn">onmessage</span> = ({ data }) => {
+      <span class="kw">const</span> event = <span class="cls">JSON</span>.<span class="fn">parse</span>(data);
+      <span class="fn">startTransition</span>(() => {
+        <span class="fn">handleEvent</span>(event, setPeers, setCursors);
+      });
+    };
+
+    <span class="kw">return</span> () => {
+      ws.<span class="fn">close</span>(); <span class="cmt">// ✦ Proper cleanup!</span>
+    };
+  }, [sessionId]);
+
+  <span class="kw">return</span> { peers, cursors, isPending };
+};
+
+<span class="kw">export default function</span> <span class="fn">App</span>() {
+  <span class="kw">const</span> { peers, cursors } = <span class="fn">useCollaboration</span>(<span class="str">'nexus-react-ws-2026'</span>);
+  <span class="kw">const</span> [aiContext, setAiContext] = <span class="fn">useState</span>&lt;<span class="type">string</span>&gt;(<span class="str">''</span>);
+  <span class="kw">const</span> [suggestions, setSuggestions] = <span class="fn">useState</span>&lt;<span class="cls">Suggestion</span>[]&gt;([]);
+
+  <span class="kw">const</span> <span class="fn">handleAIQuery</span> = <span class="kw">async</span> (code: <span class="type">string</span>) => {
+    <span class="kw">const</span> stream = <span class="kw">await</span> <span class="fn">streamSuggestions</span>({ code, language: <span class="str">'tsx'</span> });
+    <span class="kw">for await</span> (<span class="kw">const</span> chunk <span class="kw">of</span> stream) {
+      <span class="fn">setSuggestions</span>(prev => [...prev, chunk]);
+    }
+  };
+
+  <span class="kw">return</span> (
+    &lt;<span class="tag">div</span> <span class="attr">className</span>=<span class="str">"nexus-workspace"</span>&gt;
+      &lt;<span class="cls">AIAssistant</span>
+        <span class="attr">context</span>={aiContext}
+        <span class="attr">suggestions</span>={suggestions}
+        <span class="attr">onQuery</span>={handleAIQuery}
+        <span class="attr">streaming</span>
+      /&gt;
+      &lt;<span class="cls">CollaborationOverlay</span> <span class="attr">cursors</span>={cursors} <span class="attr">peers</span>={peers} /&gt;
+    &lt;/<span class="tag">div</span>&gt;
+  );
+}
+</div>
+      <div class="cursors-overlay" id="cursorsOverlay">
+        <div class="live-cursor" style="top:315px;left:480px">
+          <div class="cursor-line" style="background:#8B5CF6"></div>
+          <div class="cursor-tag" style="background:#8B5CF6;color:white">Sara K.</div>
+        </div>
+        <div class="live-cursor" style="top:420px;left:320px">
+          <div class="cursor-line" style="background:#00FF9F"></div>
+          <div class="cursor-tag" style="background:#00FF9F;color:#0D0D1A">Mike L.</div>
+        </div>
+        <div class="live-cursor" style="top:525px;left:200px">
+          <div class="cursor-line" style="background:#FF2D78"></div>
+          <div class="cursor-tag" style="background:#FF2D78;color:white">Raj P.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="status-bar">
+      <div class="sb-item" onclick="showToast('Git: main branch, 3 ahead','info',2000)">
+        <span class="material-icons-round" style="font-size:12px">account_tree</span>
+        main ✦ 3↑
+      </div>
+      <div class="sb-sep"></div>
+      <div class="sb-item">
+        <span style="width:8px;height:8px;border-radius:50%;background:var(--neon-pink);box-shadow:0 0 6px var(--neon-pink)"></span>
+        2 errors
+      </div>
+      <div class="sb-sep"></div>
+      <div class="sb-item">
+        <span style="width:8px;height:8px;border-radius:50%;background:var(--neon-orange)"></span>
+        4 warnings
+      </div>
+      <div class="sb-sep"></div>
+      <div class="sb-item"><span class="material-icons-round" style="font-size:12px">description</span>TypeScript · TSX</div>
+      <div class="sb-sep"></div>
+      <div class="sb-item"><span class="material-icons-round" style="font-size:12px">people</span>8 coders online</div>
+      <div style="margin-left:auto" class="sb-item">
+        <span class="material-icons-round" style="font-size:12px;color:var(--neon-violet)">smart_toy</span>
+        <span style="color:var(--neon-violet)">AI: Ready</span>
+      </div>
+      <div class="sb-item">Ln 42, Col 18</div>
+      <div class="sb-item">UTF-8</div>
+    </div>
+  </div>
+
+  <!-- Right Panel -->
+  <div class="right-panel">
+    <div class="ai-chat-section">
+      <div class="panel-header">
+        <div class="panel-title">
+          <span class="material-icons-round">smart_toy</span>
+          NexusAI Assistant
+          <span class="badge-violet">GPT-5</span>
+        </div>
+        <div style="display:flex;gap:var(--space-1)">
+          <div class="icon-btn" style="width:28px;height:28px" onclick="showToast('AI context: full file + selection mode','info')">
+            <span class="material-icons-round" style="font-size:15px">data_object</span>
+          </div>
+          <div class="icon-btn" style="width:28px;height:28px" onclick="clearChat()">
+            <span class="material-icons-round" style="font-size:15px">delete_sweep</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="chat-messages" id="chatMessages">
+        <div class="msg ai">
+          <div class="msg-avatar" style="background:linear-gradient(135deg,#8B5CF6,#00D4FF)">🤖</div>
+          <div class="msg-body">
+            <div class="msg-header">
+              <span class="msg-name" style="color:var(--neon-violet)">NexusAI</span>
+              <span class="msg-time">Just now</span>
+            </div>
+            <div class="msg-bubble">
+              Hey team! I've analyzed your <code>App.tsx</code>. I see you're building a real-time collaboration hook with WebSocket + React 19 transitions.
+              <br/><br/>
+              🔍 <strong style="color:var(--gold-300)">2 issues detected:</strong>
+              <br/>• Missing cleanup for WebSocket on unmount
+              <br/>• <code>handleEvent</code> function not defined — possible <span style="color:var(--neon-pink)">ReferenceError</span>
+              <br/><br/>
+              Want me to fix these automatically? ✨
+            </div>
+          </div>
+        </div>
+
+        <div class="msg user">
+          <div class="msg-body">
+            <div class="msg-header" style="justify-content:flex-end">
+              <span class="msg-time">2m ago</span>
+              <span class="msg-name" style="color:var(--gold-300)">Alex (You)</span>
+            </div>
+            <div class="msg-bubble">Yes! Fix the WebSocket cleanup and also optimize the cursor update throttling. We're seeing lag with 8+ users.</div>
+          </div>
+          <div class="msg-avatar" style="background:var(--gradient-gold);color:#0D0D1A">AJ</div>
+        </div>
+
+        <div class="msg ai">
+          <div class="msg-avatar" style="background:linear-gradient(135deg,#8B5CF6,#00D4FF)">🤖</div>
+          <div class="msg-body">
+            <div class="msg-header">
+              <span class="msg-name" style="color:var(--neon-violet)">NexusAI</span>
+              <span class="msg-time">1m ago</span>
+            </div>
+            <div class="msg-bubble">Fixed! Here's the optimized hook with proper cleanup + throttled cursor updates using <code>requestAnimationFrame</code>:</div>
+            <div class="msg-code">
+              <div class="msg-code-header">
+                <span class="msg-code-lang">TypeScript</span>
+                <button class="msg-code-copy" onclick="copyCode(this)">
+                  <span class="material-icons-round" style="font-size:12px">content_copy</span>Copy
+                </button>
+              </div>
+              <pre><span style="color:#C792EA">const</span> <span style="color:#82AAFF">useCollaboration</span> = (sessionId: <span style="color:#00D4FF">string</span>) => {
+  <span style="color:#C792EA">const</span> [peers, setPeers] = <span style="color:#82AAFF">useState</span>&lt;<span style="color:#FFCB6B">Peer</span>[]&gt;([]);
+  <span style="color:#545a85">// ✦ Throttled cursor via rAF</span>
+  <span style="color:#C792EA">const</span> rafRef = <span style="color:#82AAFF">useRef</span>&lt;<span style="color:#00D4FF">number</span>&gt;();
+
+  <span style="color:#82AAFF">useEffect</span>(() => {
+    <span style="color:#C792EA">const</span> ws = <span style="color:#C792EA">new</span> <span style="color:#FFCB6B">WebSocket</span>(...);
+    <span style="color:#C792EA">return</span> () => {
+      ws.<span style="color:#82AAFF">close</span>(); <span style="color:#545a85">// ✦ Cleanup!</span>
+      <span style="color:#82AAFF">cancelAnimationFrame</span>(rafRef.current);
+    };
+  }, [sessionId]);
+};</pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="msg peer">
+          <div class="msg-avatar" style="background:linear-gradient(135deg,#8B5CF6,#00D4FF)">SK</div>
+          <div class="msg-body">
+            <div class="msg-header">
+              <span class="msg-name" style="color:var(--neon-blue)">Sara K.</span>
+              <span class="msg-time">30s ago</span>
+            </div>
+            <div class="msg-bubble">🔥 This is clean! Should we also add optimistic cursor updates before the WS ack arrives?</div>
+          </div>
+        </div>
+
+        <div class="ai-typing" id="aiTyping" style="display:none">
+          <div class="msg-avatar" style="background:linear-gradient(135deg,#8B5CF6,#00D4FF);width:24px;height:24px;font-size:0.7rem">🤖</div>
+          <span style="font-size:0.78rem">NexusAI is thinking</span>
+          <div class="typing-dots">
+            <div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="context-chips">
+        <div class="ctx-chip" onclick="askAI(this.textContent)">Fix TypeScript errors</div>
+        <div class="ctx-chip" onclick="askAI(this.textContent)">Optimize performance</div>
+        <div class="ctx-chip" onclick="askAI(this.textContent)">Add error boundaries</div>
+        <div class="ctx-chip" onclick="askAI(this.textContent)">Refactor hook</div>
+        <div class="ctx-chip" onclick="askAI(this.textContent)">Write tests</div>
+        <div class="ctx-chip" onclick="askAI(this.textContent)">Document code</div>
+      </div>
+
+      <div class="chat-input-row">
+        <div class="chat-input-wrap">
+          <span class="material-icons-round" style="font-size:18px;color:var(--neon-violet);flex-shrink:0">smart_toy</span>
+          <textarea class="chat-textarea" id="chatInput" rows="1"
+            placeholder="Ask AI anything about your code... (⌘+Enter to send)"
+            onkeydown="handleChatKey(event)"
+            oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
+          <div style="display:flex;gap:var(--space-1);align-items:flex-end;flex-shrink:0">
+            <div class="icon-btn" style="width:28px;height:28px" onclick="showToast('File attachment: coming soon!','info')">
+              <span class="material-icons-round" style="font-size:15px">attach_file</span>
+            </div>
+            <div class="icon-btn" style="width:28px;height:28px" onclick="toggleVoice()">
+              <span class="material-icons-round" style="font-size:15px">mic</span>
+            </div>
+            <button class="send-btn" onclick="sendMessage()">
+              <span class="material-icons-round" style="font-size:16px">send</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bottom-section">
+      <div class="panel-header">
+        <div class="panel-title">
+          <span class="material-icons-round">headset_mic</span>
+          Voice & Quick Actions
+        </div>
+      </div>
+      <div class="voice-panel">
+        <div class="voice-bar">
+          <button class="voice-btn active" id="voiceBtn" onclick="toggleVoice()">
+            <span class="material-icons-round" style="font-size:16px">mic</span>Live
+          </button>
+          <div class="voice-waveform" id="waveform"></div>
+        </div>
+        <div class="shortcuts">
+          <div class="shortcut" onclick="showToast('Live Share link copied!','success')"><span class="icon"><i class="bi bi-share-fill"></i></span><span class="label">Share</span></div>
+          <div class="shortcut" onclick="showToast('Snapshot saved!','success')"><span class="icon"><i class="bi bi-camera-fill"></i></span><span class="label">Snapshot</span></div>
+          <div class="shortcut" onclick="showToast('Kode review started!','info')"><span class="icon"><i class="bi bi-eye-fill"></i></span><span class="label">Review</span></div>
+          <div class="shortcut" onclick="showToast('AI explaining selected code...','info')"><span class="icon"><i class="bi bi-cpu-fill"></i></span><span class="label">Explain</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Floating AI -->
+<div class="ai-float" id="aiFloat">
+  <div class="ai-float-pulse"></div>
+  <div class="ai-float-btn" onclick="toggleAIPopup()">🤖</div>
+  <div class="ai-float-popup" id="aiPopup">
+    <div class="ai-popup-title">
+      <span class="material-icons-round" style="font-size:16px">auto_fix_high</span>AI Smart Suggestions
+    </div>
+    <div class="ai-suggestion" onclick="applyAISuggestion('cleanup')"><strong>🔴 Fix:</strong> Add WebSocket cleanup in <code>useEffect</code> return</div>
+    <div class="ai-suggestion" onclick="applyAISuggestion('throttle')"><strong>⚡ Optimize:</strong> Throttle cursor updates with <code>requestAnimationFrame</code></div>
+    <div class="ai-suggestion" onclick="applyAISuggestion('types')"><strong>🔷 Types:</strong> Define <code>Peer</code> and <code>Participant</code> interfaces</div>
+    <div class="ai-suggestion" onclick="applyAISuggestion('error')"><strong>🛡️ Resilience:</strong> Add error boundary around WebSocket handler</div>
+  </div>
+</div>
+
+<!-- Peers Panel -->
+<div class="peers-panel" id="peersPanel">
+  <div style="font-size:0.78rem;font-weight:700;color:var(--gold-300);margin-bottom:var(--space-3)">⚡ Active Coders (8)</div>
+  <div class="peer-row">
+    <div class="avatar avatar-sm" style="background:var(--gradient-gold)">AJ</div>
+    <div><div class="peer-name">Alex J. <span style="color:var(--gold-300)">(You)</span></div><div class="peer-status">Editing App.tsx</div></div>
+    <div class="online-dot" style="margin-left:auto"></div>
+  </div>
+  <div class="peer-row">
+    <div class="avatar avatar-sm" style="background:linear-gradient(135deg,#8B5CF6,#00D4FF)">SK</div>
+    <div><div class="peer-name">Sara K.</div><div class="peer-status">Viewing App.tsx</div></div>
+    <div class="online-dot" style="margin-left:auto"></div>
+  </div>
+  <div class="peer-row">
+    <div class="avatar avatar-sm" style="background:linear-gradient(135deg,#00FF9F,#00D4FF)">ML</div>
+    <div><div class="peer-name">Mike L.</div><div class="peer-status">Editing server.ts</div></div>
+    <div class="online-dot" style="margin-left:auto"></div>
+  </div>
+  <div class="peer-row">
+    <div class="avatar avatar-sm" style="background:linear-gradient(135deg,#FF2D78,#FF6B1A)">RP</div>
+    <div><div class="peer-name">Raj P.</div><div class="peer-status">In terminal</div></div>
+    <div class="online-dot" style="margin-left:auto"></div>
+  </div>
+  <div class="peer-row">
+    <div class="avatar avatar-sm" style="background:linear-gradient(135deg,#FFD700,#8B5CF6)">+4</div>
+    <div><div class="peer-name">4 more coders</div><div class="peer-status">Various files</div></div>
+  </div>
+</div>
+
+<script>
+  /* ── Line Numbers ─────────────────────────────────────────── */
+  function renderLineNumbers() {
+    const content = document.getElementById('codeContent');
+    const ln = document.getElementById('lineNumbers');
+    const lines = content.innerText.split('\n');
+    ln.innerHTML = lines.map((_,i) =>
+      `<span class="ln${i===41?' active':''}" onclick="jumpLine(${i+1})">${i+1}</span>`
+    ).join('');
+  }
+  renderLineNumbers();
+  function onEditorInput() {
+    renderLineNumbers();
+    clearTimeout(window._aiDebounce);
+    window._aiDebounce = setTimeout(() => { if (Math.random() > 0.7) showAITyping(); }, 1500);
+  }
+  function onEditorClick() { renderLineNumbers(); }
+  function jumpLine(n) { showToast(`Jumped to line ${n}`, 'info', 1500); }
+
+  /* ── Tab Switching ─────────────────────────────────────────── */
+  const fileSnippets = {
+    'App.tsx': null,
+    'server.ts': `<span class="cmt">// SyncKode · server.ts — Express + WebSocket Server</span>\n\n<span class="kw">import</span> express <span class="kw">from</span> <span class="str">'express'</span>;\n<span class="kw">import</span> { <span class="cls">WebSocketServer</span> } <span class="kw">from</span> <span class="str">'ws'</span>;\n<span class="kw">import</span> { <span class="fn">handleCollabEvent</span> } <span class="kw">from</span> <span class="str">'./collab'</span>;\n\n<span class="kw">const</span> app = <span class="fn">express</span>();\n<span class="kw">const</span> wss = <span class="kw">new</span> <span class="cls">WebSocketServer</span>({ port: <span class="num">8080</span> });\n\nwss.<span class="fn">on</span>(<span class="str">'connection'</span>, (ws, req) => {\n  ws.<span class="fn">on</span>(<span class="str">'message'</span>, (data) => {\n    <span class="fn">handleCollabEvent</span>(<span class="cls">JSON</span>.<span class="fn">parse</span>(data), wss);\n  });\n});\n\napp.<span class="fn">listen</span>(<span class="num">3000</span>);`,
+    'api.ts': `<span class="cmt">// SyncKode · api.ts — AI Streaming API</span>\n\n<span class="kw">export async function</span>* <span class="fn">streamSuggestions</span>(opts: <span class="cls">StreamOpts</span>) {\n  <span class="kw">const</span> response = <span class="kw">await</span> <span class="fn">fetch</span>(<span class="str">'/api/ai/stream'</span>, {\n    method: <span class="str">'POST'</span>,\n    body: <span class="cls">JSON</span>.<span class="fn">stringify</span>(opts),\n  });\n  <span class="kw">const</span> reader = response.body!.<span class="fn">getReader</span>();\n  <span class="kw">const</span> decoder = <span class="kw">new</span> <span class="cls">TextDecoder</span>();\n\n  <span class="kw">while</span> (<span class="kw">true</span>) {\n    <span class="kw">const</span> { done, value } = <span class="kw">await</span> reader.<span class="fn">read</span>();\n    <span class="kw">if</span> (done) <span class="kw">break</span>;\n    <span class="kw">yield</span> <span class="cls">JSON</span>.<span class="fn">parse</span>(decoder.<span class="fn">decode</span>(value));\n  }\n}`,
+    'styles.css': `<span class="cmt">/* SyncKode · Collaboration styles */</span>\n\n<span class="tag">.nexus-workspace</span> {\n  <span class="prop">display</span>: <span class="fn">grid</span>;\n  <span class="prop">grid-template-columns</span>: 1fr 380px;\n  <span class="prop">height</span>: <span class="num">100vh</span>;\n  <span class="prop">background</span>: <span class="str">#050508</span>;\n}`
+  };
+
+  function switchTab(el, name) {
+    document.querySelectorAll('.etab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    if (fileSnippets[name]) document.getElementById('codeContent').innerHTML = fileSnippets[name];
+    renderLineNumbers();
+  }
+  function closeTab(event, el) {
+    event.stopPropagation();
+    const tab = el.closest('.etab');
+    if (document.querySelectorAll('.etab').length > 1) {
+      const wasActive = tab.classList.contains('active');
+      tab.remove();
+      if (wasActive) { const tabs = document.querySelectorAll('.etab'); if (tabs.length) tabs[0].classList.add('active'); }
+    }
+  }
+  function addTab() {
+    const name = prompt('New file name:', 'untitled.ts');
+    if (!name) return;
+    const tabs = document.getElementById('editorTabs');
+    const addBtn = tabs.querySelector('.tab-add-btn');
+    const tab = document.createElement('div');
+    tab.className = 'etab';
+    tab.innerHTML = `<span class="tab-dot" style="background:#FFD700"></span>${name}<span class="tab-close material-icons-round" style="font-size:12px" onclick="closeTab(event,this)">close</span>`;
+    tab.onclick = () => switchTab(tab, name);
+    tabs.insertBefore(tab, addBtn);
+    switchTab(tab, name);
+  }
+
+  /* ── Chat ──────────────────────────────────────────────────── */
+  function handleChatKey(e) { if ((e.ctrlKey||e.metaKey) && e.key==='Enter') { e.preventDefault(); sendMessage(); } }
+  function sendMessage() {
+    const input = document.getElementById('chatInput');
+    const text = input.value.trim();
+    if (!text) return;
+    appendUserMsg(text);
+    input.value = ''; input.style.height = 'auto';
+    showAITyping();
+    setTimeout(() => { hideAITyping(); appendAIMsg(generateAIReply(text)); }, 1800 + Math.random()*1000);
+  }
+  function appendUserMsg(text) {
+    const c = document.getElementById('chatMessages');
+    const d = document.createElement('div');
+    d.className = 'msg user';
+    d.innerHTML = `<div class="msg-body"><div class="msg-header" style="justify-content:flex-end"><span class="msg-time">Just now</span><span class="msg-name" style="color:var(--gold-300)">Alex (You)</span></div><div class="msg-bubble">${escHtml(text)}</div></div><div class="msg-avatar" style="background:var(--gradient-gold);color:#0D0D1A">AJ</div>`;
+    c.insertBefore(d, document.getElementById('aiTyping'));
+    c.scrollTop = c.scrollHeight;
+  }
+  function appendAIMsg(text) {
+    const c = document.getElementById('chatMessages');
+    const d = document.createElement('div');
+    d.className = 'msg ai';
+    d.innerHTML = `<div class="msg-avatar" style="background:linear-gradient(135deg,#8B5CF6,#00D4FF)">🤖</div><div class="msg-body"><div class="msg-header"><span class="msg-name" style="color:var(--neon-violet)">NexusAI</span><span class="msg-time">Just now</span></div><div class="msg-bubble">${text}</div></div>`;
+    c.insertBefore(d, document.getElementById('aiTyping'));
+    c.scrollTop = c.scrollHeight;
+  }
+  function generateAIReply(q) {
+    const r = [
+      `I've analyzed your code and <strong style="color:var(--gold-300)">found a potential improvement</strong>. The <code>useEffect</code> hook can be optimized using the <code>useCallback</code> pattern to prevent unnecessary re-renders. ✨`,
+      `For this pattern, I'd recommend <code>React.memo</code> combined with proper dependency arrays. The current implementation triggers <span style="color:var(--neon-orange)">3 extra renders</span> per cursor update.`,
+      `The type inference for <code>Peer[]</code> can be tightened — try a discriminated union: <code>type Peer = ConnectedPeer | IdlePeer</code>`,
+      `I'd add <strong style="color:var(--neon-green)">exponential backoff retry logic</strong> to prevent thundering herd issues when 8+ users disconnect simultaneously. Shall I generate the implementation? 🔄`,
+    ];
+    return r[Math.floor(Math.random()*r.length)];
+  }
+  function showAITyping() { document.getElementById('aiTyping').style.display='flex'; document.getElementById('chatMessages').scrollTop=99999; }
+  function hideAITyping() { document.getElementById('aiTyping').style.display='none'; }
+  function askAI(p) { document.getElementById('chatInput').value=p; sendMessage(); }
+  function clearChat() {
+    const msgs = document.getElementById('chatMessages');
+    const typing = document.getElementById('aiTyping');
+    while (msgs.firstChild && msgs.firstChild!==typing) msgs.removeChild(msgs.firstChild);
+    showToast('Chat cleared','info',2000);
+  }
+  function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  /* ── AI Float ──────────────────────────────────────────────── */
+  function toggleAIPopup() { document.getElementById('aiPopup').classList.toggle('visible'); }
+  function applyAISuggestion(type) {
+    document.getElementById('aiPopup').classList.remove('visible');
+    showToast(`✨ AI suggestion "${type}" applied!`, 'success');
+    appendAIMsg(`I've applied the <strong style="color:var(--gold-300)">${type}</strong> fix to your editor. Want me to explain what changed?`);
+  }
+
+  /* ── Voice ─────────────────────────────────────────────────── */
+  let voiceActive = true;
+  function toggleVoice() {
+    voiceActive = !voiceActive;
+    const btn = document.getElementById('voiceBtn');
+    btn.className = `voice-btn ${voiceActive?'active':'muted'}`;
+    btn.innerHTML = `<span class="material-icons-round" style="font-size:16px">${voiceActive?'mic':'mic_off'}</span>${voiceActive?'Live':'Muted'}`;
+    updateWaveform();
+    showToast(voiceActive?'🎙️ Microphone enabled':'🔇 Microphone muted', voiceActive?'success':'warning', 2000);
+  }
+  function updateWaveform() {
+    const wf = document.getElementById('waveform');
+    wf.innerHTML = '';
+    for (let i=0;i<24;i++) {
+      const b = document.createElement('div');
+      b.className = 'wave-bar';
+      const maxH = voiceActive ? (8+Math.random()*20) : 4;
+      b.style.cssText = `--max-h:${maxH}px;--delay:${0.2+Math.random()*0.8}s;height:${voiceActive?maxH:4}px;background:${voiceActive?'var(--neon-green)':'var(--text-muted)'}`;
+      wf.appendChild(b);
+    }
+  }
+  updateWaveform();
+  setInterval(() => { if (voiceActive) updateWaveform(); }, 1500);
+
+  /* ── Peers ─────────────────────────────────────────────────── */
+  function togglePeers() { document.getElementById('peersPanel').classList.toggle('visible'); }
+  document.addEventListener('click', e => {
+    if (!e.target.closest('#peersPanel') && !e.target.closest('[onclick="togglePeers()"]'))
+      document.getElementById('peersPanel').classList.remove('visible');
+    if (!e.target.closest('#aiFloat'))
+      document.getElementById('aiPopup').classList.remove('visible');
+  });
+
+  /* ── Editor Key ────────────────────────────────────────────── */
+  function handleEditorKey(e) { if (e.key==='Tab') { e.preventDefault(); document.execCommand('insertText',false,'  '); } }
+
+  /* ── Run Kode ──────────────────────────────────────────────── */
+  function runCode() {
+    showToast('⚙️ Compiling TypeScript...','info',1000);
+    setTimeout(() => showToast('🔴 2 errors found — check status bar','error'), 1200);
+  }
+
+  /* ── Copy Kode ─────────────────────────────────────────────── */
+  function copyCode(btn) {
+    navigator.clipboard.writeText(btn.closest('.msg-code').querySelector('pre').textContent)
+      .then(() => showToast('Kode copied to clipboard!','success',2000));
+    btn.innerHTML = '<span class="material-icons-round" style="font-size:12px">check</span> Copied!';
+    setTimeout(() => btn.innerHTML='<span class="material-icons-round" style="font-size:12px">content_copy</span> Copy', 2000);
+  }
+
+  /* ── Room Link ─────────────────────────────────────────────── */
+  function copyRoomLink() {
+    navigator.clipboard.writeText(window.location.href)
+      .then(() => showToast('Room link copied! Share with teammates 🔗','success'));
+  }
+
+  /* ── Toast ─────────────────────────────────────────────────── */
+  function showToast(message, type='info', duration=3500) {
+    const container = document.getElementById('toastContainer');
+    const icons = {info:'info',success:'check_circle',error:'error',warning:'warning'};
+    const t = document.createElement('div');
+    t.style.cssText = 'display:flex;align-items:center;gap:10px;padding:12px 16px;background:#0F0F1C;border:1px solid rgba(255,215,0,0.12);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.4);min-width:280px;max-width:400px;animation:slide-in 0.3s ease;';
+    t.innerHTML = `<span class="material-icons-round" style="color:${type==='success'?'#00FF9F':type==='error'?'#FF2D78':'#FFD700'};font-size:20px">${icons[type]}</span><span style="flex:1;font-size:0.88rem;color:#E8E8F0">${message}</span><button onclick="this.parentElement.remove()" style="background:none;border:none;color:#555570;cursor:pointer"><span class="material-icons-round" style="font-size:16px">close</span></button>`;
+    container.appendChild(t);
+    setTimeout(() => { t.style.opacity='0'; t.style.transform='translateX(100%)'; t.style.transition='all 0.4s ease'; setTimeout(()=>t.remove(),400); }, duration);
+  }
+
+  /* ── Animate cursors ───────────────────────────────────────── */
+  setInterval(() => {
+    document.querySelectorAll('.live-cursor').forEach(c => {
+      c.style.top  = (parseInt(c.style.top)  + (Math.random()-0.5)*2) + 'px';
+      c.style.left = (parseInt(c.style.left) + (Math.random()-0.5)*3) + 'px';
+    });
+  }, 2000);
+</script>
+</body>
+</html>
