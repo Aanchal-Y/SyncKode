@@ -249,6 +249,38 @@
       .ai-float { right: var(--space-5); }
     }
     @media (max-width: 600px) { .editor-tabs { display: none; } .room-topbar { gap: var(--space-2); } }
+
+    /* ══ INTEGRATED TERMINAL ════════════════════════════════ */
+    .terminal-panel { height: 260px; min-height: 120px; max-height: 70vh; flex-shrink: 0; border-top: 2px solid rgba(255,215,0,0.15); background: #080812; display: none; flex-direction: column; position: relative; }
+    .terminal-panel.open { display: flex; }
+    .term-resize-handle { position: absolute; top: -4px; left: 0; right: 0; height: 8px; cursor: ns-resize; z-index: 10; }
+    .term-resize-handle:hover { background: rgba(255,215,0,0.12); }
+    .term-header { height: 36px; display: flex; align-items: center; justify-content: space-between; padding: 0 8px 0 12px; background: rgba(255,215,0,0.04); border-bottom: 1px solid rgba(255,215,0,0.08); flex-shrink: 0; }
+    .term-tabs { display: flex; align-items: center; gap: 4px; }
+    .term-tab { display: flex; align-items: center; gap: 6px; padding: 0 12px; height: 36px; font-size: 0.72rem; font-family: var(--font-ui); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); border-bottom: 2px solid transparent; cursor: pointer; transition: all 0.15s; }
+    .term-tab.active { color: var(--gold-300); border-bottom-color: var(--gold-400); }
+    .term-lang-badge { font-size: 0.65rem; font-family: var(--font-ui); font-weight: 700; padding: 2px 7px; border-radius: 4px; background: rgba(139,92,246,0.18); color: #a78bfa; letter-spacing: 0.04em; text-transform: uppercase; margin-left: 4px; }
+    .term-running-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--neon-green); animation: pulse 1s infinite; flex-shrink: 0; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    .term-actions { display: flex; align-items: center; gap: 4px; }
+    .term-kill-btn { display: none; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 4px; background: rgba(243,139,168,0.15); color: #f38ba8; font-size: 0.7rem; font-family: var(--font-ui); font-weight: 700; cursor: pointer; border: 1px solid rgba(243,139,168,0.3); transition: all 0.15s; }
+    .term-kill-btn:hover { background: rgba(243,139,168,0.28); }
+    .term-kill-btn.visible { display: flex; }
+    .term-output { flex: 1; overflow-y: auto; padding: 8px 14px; font-family: var(--font-mono); font-size: 0.78rem; line-height: 1.65; display: flex; flex-direction: column; gap: 0; }
+    .term-output::-webkit-scrollbar { width: 4px; }
+    .term-output::-webkit-scrollbar-thumb { background: rgba(255,215,0,0.15); border-radius: 2px; }
+    .term-line { display: block; white-space: pre-wrap; word-break: break-all; margin: 0; }
+    .term-stdout  { color: #cdd6f4; }
+    .term-stderr  { color: #f38ba8; }
+    .term-system  { color: #6c7086; font-style: italic; }
+    .term-cmd     { color: var(--gold-300); }
+    .term-success { color: var(--neon-green); }
+    .term-input-row { height: 34px; display: flex; align-items: center; padding: 0 14px; gap: 8px; border-top: 1px solid rgba(255,215,0,0.07); background: rgba(0,0,0,0.35); flex-shrink: 0; }
+    .term-prompt { color: var(--neon-green); font-family: var(--font-mono); font-size: 0.8rem; font-weight: 700; user-select: none; transition: color 0.2s; }
+    .term-prompt.running { color: #cba6f7; }
+    .term-input { flex: 1; background: none; border: none; outline: none; color: #cdd6f4; font-family: var(--font-mono); font-size: 0.78rem; caret-color: var(--gold-300); }
+    .term-input::placeholder { color: rgba(255,255,255,0.18); }
+    .term-lang-select { background: rgba(139,92,246,0.1); border: 1px solid rgba(139,92,246,0.25); color: #a78bfa; font-family: var(--font-ui); font-size: 0.68rem; font-weight: 700; border-radius: 4px; padding: 2px 4px; cursor: pointer; outline: none; text-transform: uppercase; }
   </style>
 </head>
 <body>
@@ -294,15 +326,11 @@
     </button>
   </div>
   <div class="topbar-right">
-    <div class="collab-users">
-      <div class="avatar avatar-sm" style="background:linear-gradient(135deg,#FFD700,#FF6B1A)">AJ</div>
-      <div class="avatar avatar-sm" style="background:linear-gradient(135deg,#8B5CF6,#00D4FF)">SK</div>
-      <div class="avatar avatar-sm" style="background:linear-gradient(135deg,#00FF9F,#00D4FF)">ML</div>
-      <div class="avatar avatar-sm" style="background:linear-gradient(135deg,#FF2D78,#FF6B1A)">RP</div>
-      <div class="avatar avatar-sm" style="background:var(--bg-elevated);color:var(--text-muted);border:1px solid rgba(255,215,0,0.2);cursor:pointer" onclick="togglePeers()">+4</div>
+    <div class="collab-users" id="collabAvatars">
+      <!-- populated by Socket.io room-members event -->
     </div>
     <div class="topbar-sep"></div>
-    <div class="icon-btn" onclick="showToast('Terminal: integrated terminal coming soon!','info')"><span class="material-icons-round" style="font-size:18px">terminal</span></div>
+    <div class="icon-btn" onclick="toggleTerminal()" title="Toggle terminal"><span class="material-icons-round" style="font-size:18px">terminal</span></div>
     <div class="icon-btn" onclick="showToast('Git: commit history panel opening...','info')"><span class="material-icons-round" style="font-size:18px">account_tree</span></div>
     <div class="icon-btn" onclick="copyRoomLink()"><span class="material-icons-round" style="font-size:18px">share</span></div>
     <div class="icon-btn"><span class="material-icons-round" style="font-size:18px">tune</span></div>
@@ -398,17 +426,64 @@
 }
 </div>
       <div class="cursors-overlay" id="cursorsOverlay">
-        <div class="live-cursor" style="top:315px;left:480px">
-          <div class="cursor-line" style="background:#8B5CF6"></div>
-          <div class="cursor-tag" style="background:#8B5CF6;color:white">Sara K.</div>
+        <!-- real peer cursors populated by cursor-update socket events -->
+      </div>
+    </div>
+
+    <!-- ══ Integrated Terminal ══════════════════════════════ -->
+    <div class="terminal-panel" id="terminalPanel">
+      <div class="term-resize-handle" id="termResizeHandle"></div>
+      <div class="term-header">
+        <div class="term-tabs">
+          <div class="term-tab active">
+            <span class="material-icons-round" style="font-size:13px">terminal</span>Terminal
+            <span class="term-lang-badge" id="termLangBadge">JS</span>
+            <span class="term-running-dot" id="termRunningDot" style="display:none"></span>
+          </div>
         </div>
-        <div class="live-cursor" style="top:420px;left:320px">
-          <div class="cursor-line" style="background:#00FF9F"></div>
-          <div class="cursor-tag" style="background:#00FF9F;color:#0D0D1A">Mike L.</div>
+        <div class="term-actions">
+          <select class="term-lang-select" id="termLangSelect" title="Language" onchange="updateTermLangBadge()">
+            <option value="javascript">JavaScript</option>
+            <option value="typescript">TypeScript</option>
+            <option value="python">Python</option>
+            <option value="go">Go</option>
+            <option value="java">Java</option>
+            <option value="c">C</option>
+            <option value="c++">C++</option>
+            <option value="rust">Rust</option>
+            <option value="php">PHP</option>
+            <option value="ruby">Ruby</option>
+            <option value="bash">Bash</option>
+            <option value="powershell">PowerShell</option>
+            <option value="lua">Lua</option>
+            <option value="r">R</option>
+            <option value="kotlin">Kotlin</option>
+            <option value="swift">Swift</option>
+            <option value="perl">Perl</option>
+          </select>
+          <div class="term-kill-btn" id="termKillBtn" onclick="termKill()" title="Kill process (Ctrl+C)">
+            <span class="material-icons-round" style="font-size:12px">stop</span> Kill
+          </div>
+          <div class="icon-btn" style="width:26px;height:26px" onclick="clearTerminal()" title="Clear">
+            <span class="material-icons-round" style="font-size:14px">delete_sweep</span>
+          </div>
+          <div class="icon-btn" style="width:26px;height:26px" onclick="toggleTerminal()" title="Hide terminal">
+            <span class="material-icons-round" style="font-size:14px">keyboard_arrow_down</span>
+          </div>
         </div>
-        <div class="live-cursor" style="top:525px;left:200px">
-          <div class="cursor-line" style="background:#FF2D78"></div>
-          <div class="cursor-tag" style="background:#FF2D78;color:white">Raj P.</div>
+      </div>
+      <div class="term-output" id="termOutput">
+        <span class="term-line term-system">⚡ SyncKode Terminal — select language, press ▶ Run to execute editor code, or type a command below</span>
+        <span class="term-line term-system">  Supports: JS · TS · Python · Go · Java · C · C++ · Rust · PHP · Ruby · Bash · Lua · R · Kotlin · Swift · Perl</span>
+        <span class="term-line term-system">  Ctrl+C to kill · ↑/↓ history · stdin supported for interactive programs</span>
+      </div>
+      <div class="term-input-row">
+        <span class="term-prompt" id="termPrompt">❯</span>
+        <input type="text" class="term-input" id="termInput"
+               placeholder="Type a command or press ▶ Run…"
+               onkeydown="handleTermKey(event)" autocomplete="off" spellcheck="false" />
+        <div class="icon-btn" style="width:26px;height:26px;flex-shrink:0" onclick="termRunCode()" title="Run editor code (language auto-detected)">
+          <span class="material-icons-round" style="font-size:16px;color:var(--gold-300)">play_arrow</span>
         </div>
       </div>
     </div>
@@ -583,14 +658,14 @@
       </div>
       <div class="voice-panel">
         <div class="voice-bar">
-          <button class="voice-btn active" id="voiceBtn" onclick="toggleVoice()">
-            <span class="material-icons-round" style="font-size:16px">mic</span>Live
+          <button class="voice-btn muted" id="voiceBtn" onclick="toggleVoice()">
+            <span class="material-icons-round" style="font-size:16px">mic_off</span>Muted
           </button>
           <div class="voice-waveform" id="waveform"></div>
         </div>
         <div class="shortcuts">
           <div class="shortcut" onclick="showToast('Live Share link copied!','success')"><span class="icon"><i class="bi bi-share-fill"></i></span><span class="label">Share</span></div>
-          <div class="shortcut" onclick="showToast('Snapshot saved!','success')"><span class="icon"><i class="bi bi-camera-fill"></i></span><span class="label">Snapshot</span></div>
+          <div class="shortcut" onclick="takeSnapshot()"><span class="icon"><i class="bi bi-camera-fill"></i></span><span class="label">Snapshot</span></div>
           <div class="shortcut" onclick="showToast('Kode review started!','info')"><span class="icon"><i class="bi bi-eye-fill"></i></span><span class="label">Review</span></div>
           <div class="shortcut" onclick="showToast('AI explaining selected code...','info')"><span class="icon"><i class="bi bi-cpu-fill"></i></span><span class="label">Explain</span></div>
         </div>
@@ -642,6 +717,11 @@
     <div><div class="peer-name">4 more coders</div><div class="peer-status">Various files</div></div>
   </div>
 </div>
+
+<!-- html2canvas — captures the editor as a PNG -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<!-- Socket.io client (served automatically by the backend) -->
+<script src="/socket.io/socket.io.js"></script>
 
 <script>
   /* ── Line Numbers ─────────────────────────────────────────── */
@@ -698,6 +778,127 @@
     switchTab(tab, name);
   }
 
+  /* ── Integrated Terminal ──────────────────────────────────── */
+  const LANG_DISPLAY = {
+    javascript:'JS', typescript:'TS', tsx:'TSX', jsx:'JSX',
+    python:'PY', python3:'PY', go:'GO', java:'JAVA',
+    c:'C', 'c++':'C++', cpp:'C++', rust:'RS',
+    php:'PHP', ruby:'RB', bash:'SH', shell:'SH',
+    powershell:'PS1', lua:'LUA', r:'R', kotlin:'KT',
+    swift:'SWIFT', perl:'PL',
+  };
+  function updateTermLangBadge() {
+    const sel = document.getElementById('termLangSelect');
+    const badge = document.getElementById('termLangBadge');
+    if (sel && badge) badge.textContent = LANG_DISPLAY[sel.value] || sel.value.toUpperCase();
+  }
+  function toggleTerminal() {
+    const p = document.getElementById('terminalPanel');
+    p.classList.toggle('open');
+    if (p.classList.contains('open')) setTimeout(() => document.getElementById('termInput')?.focus(), 50);
+  }
+  function clearTerminal() {
+    document.getElementById('termOutput').innerHTML =
+      '<span class="term-line term-system">Terminal cleared. Press ▶ Run or type a command.</span>';
+  }
+  // Strip ANSI escape codes
+  function stripAnsi(str) {
+    return str.replace(/\x1B\[[\d;]*[mGKHFABCDJsuhl]/g, '')
+              .replace(/\x1B\([AB]/g, '').replace(/\x1B=/g,'').replace(/\x1B>/g,'');
+  }
+  function termPrint(text, type) {
+    const out = document.getElementById('termOutput');
+    const clean = stripAnsi(text);
+    clean.split('\n').forEach((line, i, arr) => {
+      if (i === arr.length - 1 && !line) return;
+      const el = document.createElement('span');
+      el.className = 'term-line term-' + (type || 'stdout');
+      el.textContent = line;
+      out.appendChild(el);
+    });
+    out.scrollTop = out.scrollHeight;
+  }
+  let _termRunning = false;
+  function setTermRunning(on) {
+    _termRunning = on;
+    const prompt = document.getElementById('termPrompt');
+    const kill   = document.getElementById('termKillBtn');
+    const dot    = document.getElementById('termRunningDot');
+    if (prompt) { prompt.textContent = on ? '●' : '❯'; prompt.className = 'term-prompt' + (on ? ' running' : ''); }
+    if (kill)  kill.className  = 'term-kill-btn' + (on ? ' visible' : '');
+    if (dot)   dot.style.display = on ? 'block' : 'none';
+  }
+  function termKill() { window._termKill && window._termKill(); }
+  // Resize handle
+  (function() {
+    let dragging = false, startY = 0, startH = 0;
+    document.addEventListener('mousedown', e => {
+      const h = document.getElementById('termResizeHandle');
+      if (!h || !h.contains(e.target)) return;
+      dragging = true; startY = e.clientY;
+      startH = document.getElementById('terminalPanel').offsetHeight;
+      document.body.style.userSelect = 'none';
+    });
+    document.addEventListener('mousemove', e => {
+      if (!dragging) return;
+      const delta = startY - e.clientY;
+      const panel = document.getElementById('terminalPanel');
+      const newH = Math.min(Math.max(startH + delta, 120), window.innerHeight * 0.7);
+      panel.style.height = newH + 'px';
+    });
+    document.addEventListener('mouseup', () => { dragging = false; document.body.style.userSelect = ''; });
+  })();
+  const _termHistory = []; let _termHistIdx = -1;
+  function handleTermKey(e) { 
+    const inp = e.target;
+    // Ctrl+C — kill running process
+    if (e.ctrlKey && e.key === 'c') {
+      if (_termRunning) { e.preventDefault(); termKill(); return; }
+    }
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const val = inp.value;
+      const cmd = val.trim();
+      inp.value = '';
+      if (_termRunning) {
+        // Send as stdin to the running process
+        termPrint(val, 'cmd');
+        window._termSendInput && window._termSendInput(val + '\n');
+        return;
+      }
+      if (!cmd) return;
+      _termHistory.unshift(cmd); _termHistIdx = -1;
+      termPrint('❯ ' + cmd, 'cmd');
+      window._termSendCommand(cmd, null, null);
+    } else if (e.key === 'ArrowUp') {
+      if (_termRunning) return;
+      e.preventDefault();
+      if (_termHistIdx < _termHistory.length - 1) { _termHistIdx++; inp.value = _termHistory[_termHistIdx]; }
+    } else if (e.key === 'ArrowDown') {
+      if (_termRunning) return;
+      e.preventDefault();
+      if (_termHistIdx > 0) { _termHistIdx--; inp.value = _termHistory[_termHistIdx]; }
+      else { _termHistIdx = -1; inp.value = ''; }
+    }
+  }
+  // Stubs — overridden by IIFE once socket connects
+  window._termSendCommand = () => termPrint('Not connected to a room yet. Join a room first.', 'stderr');
+  window._termSendInput   = () => {};
+  window._termKill        = () => {};
+  // Init badge on load
+  document.addEventListener('DOMContentLoaded', updateTermLangBadge);
+  function termRunCode() {
+    const codeEl   = document.getElementById('codeContent');
+    const code     = codeEl ? codeEl.textContent.trim() : '';
+    const sel      = document.getElementById('termLangSelect');
+    const language = sel ? sel.value : 'javascript';
+    if (!code) { termPrint('Editor is empty — write some code first.', 'system'); return; }
+    if (!document.getElementById('terminalPanel').classList.contains('open')) toggleTerminal();
+    termPrint('▶ Running ' + language + '...', 'system');
+    setTermRunning(true);
+    window._termSendCommand(null, code, language);
+  }
+
   /* ── Chat ──────────────────────────────────────────────────── */
   function handleChatKey(e) { if ((e.ctrlKey||e.metaKey) && e.key==='Enter') { e.preventDefault(); sendMessage(); } }
   function sendMessage() {
@@ -706,8 +907,7 @@
     if (!text) return;
     appendUserMsg(text);
     input.value = ''; input.style.height = 'auto';
-    showAITyping();
-    setTimeout(() => { hideAITyping(); appendAIMsg(generateAIReply(text)); }, 1800 + Math.random()*1000);
+    sendMessageToAI(text);
   }
   function appendUserMsg(text) {
     const c = document.getElementById('chatMessages');
@@ -725,18 +925,129 @@
     c.insertBefore(d, document.getElementById('aiTyping'));
     c.scrollTop = c.scrollHeight;
   }
-  function generateAIReply(q) {
-    const r = [
-      `I've analyzed your code and <strong style="color:var(--gold-300)">found a potential improvement</strong>. The <code>useEffect</code> hook can be optimized using the <code>useCallback</code> pattern to prevent unnecessary re-renders. ✨`,
-      `For this pattern, I'd recommend <code>React.memo</code> combined with proper dependency arrays. The current implementation triggers <span style="color:var(--neon-orange)">3 extra renders</span> per cursor update.`,
-      `The type inference for <code>Peer[]</code> can be tightened — try a discriminated union: <code>type Peer = ConnectedPeer | IdlePeer</code>`,
-      `I'd add <strong style="color:var(--neon-green)">exponential backoff retry logic</strong> to prevent thundering herd issues when 8+ users disconnect simultaneously. Shall I generate the implementation? 🔄`,
-    ];
-    return r[Math.floor(Math.random()*r.length)];
+  /* ── NexusAI: real Gemini streaming ──────────────────────── */
+  async function sendMessageToAI(text) {
+    showAITyping();
+
+    // Gather context from the live editor
+    const codeEl    = document.getElementById('codeContent');
+    const code      = codeEl ? codeEl.textContent : '';
+    const langEl    = document.querySelector('.lang-select') || document.querySelector('[data-lang]');
+    const language  = langEl ? (langEl.value || langEl.dataset.lang || langEl.textContent.trim()) : '';
+    const nameEl    = document.querySelector('.room-name');
+    const roomName  = nameEl ? nameEl.textContent.replace(/^\s*●\s*/, '').trim() : '';
+
+    // Collect last 10 user/AI messages as history
+    const history = [];
+    document.querySelectorAll('#chatMessages .msg.user .msg-bubble, #chatMessages .msg.ai .msg-bubble').forEach(el => {
+      const parent = el.closest('.msg');
+      if (!parent || parent.dataset.snapshot) return; // skip snapshot bubbles
+      const text = el.textContent.trim();
+      if (!text) return;
+      history.push({ role: parent.classList.contains('ai') ? 'ai' : 'user', text });
+    });
+    const recentHistory = history.slice(-10);
+
+    // Create AI message bubble (will be filled via streaming)
+    const c = document.getElementById('chatMessages');
+    const d = document.createElement('div');
+    d.className = 'msg ai';
+    const bubbleId = 'ai-bubble-' + Date.now();
+    d.innerHTML = `<div class="msg-avatar" style="background:linear-gradient(135deg,#8B5CF6,#00D4FF)">🤖</div><div class="msg-body"><div class="msg-header"><span class="msg-name" style="color:var(--neon-violet)">NexusAI</span><span class="msg-time">Just now</span></div><div class="msg-bubble" id="${bubbleId}"></div></div>`;
+
+    try {
+      const res = await fetch('/api/ai/chat', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ message: text, code, language, roomName, history: recentHistory }),
+      });
+
+      hideAITyping();
+
+      if (!res.ok || !res.body) {
+        let errMsg = 'Sorry, I had trouble connecting. Please try again.';
+        try { const j = await res.json(); errMsg = j.error || errMsg; } catch (_) {}
+        appendAIMsg(errMsg); return;
+      }
+
+      c.insertBefore(d, document.getElementById('aiTyping'));
+      c.scrollTop = c.scrollHeight;
+
+      const bubble  = document.getElementById(bubbleId);
+      const reader  = res.body.getReader();
+      const decoder = new TextDecoder();
+      let fullText  = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        fullText += decoder.decode(value, { stream: true });
+        bubble.innerHTML = markdownToHtml(fullText);
+        c.scrollTop = c.scrollHeight;
+      }
+
+      if (!fullText.trim()) bubble.textContent = '(No response received)';
+
+    } catch (err) {
+      hideAITyping();
+      appendAIMsg('Network error: ' + err.message);
+    }
+  }
+
+  function markdownToHtml(md) {
+    // 1) Extract fenced code blocks before escaping
+    const blocks = [];
+    let s = md.replace(/```(?:[\w]*)?\n?([\s\S]*?)```/g, (_, code) => {
+      blocks.push(code);
+      return '\x00CODE' + (blocks.length - 1) + '\x00';
+    });
+    // 2) Escape HTML in non-code text
+    s = s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    // 3) Inline code
+    s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
+    // 4) Bold / italic
+    s = s.replace(/\*\*(.+?)\*\*/gs, '<strong style="color:var(--gold-300)">$1</strong>');
+    s = s.replace(/\*(.+?)\*/gs, '<em>$1</em>');
+    // 5) Newlines
+    s = s.replace(/\n/g, '<br>');
+    // 6) Restore code blocks (escaped separately)
+    s = s.replace(/\x00CODE(\d+)\x00/g, (_, i) => {
+      const escaped = blocks[i].replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      return `<pre style="margin:6px 0;padding:8px;background:#0D0D18;border:1px solid #2A2A3E;border-radius:6px;overflow-x:auto"><code>${escaped}</code></pre>`;
+    });
+    return s;
   }
   function showAITyping() { document.getElementById('aiTyping').style.display='flex'; document.getElementById('chatMessages').scrollTop=99999; }
   function hideAITyping() { document.getElementById('aiTyping').style.display='none'; }
   function askAI(p) { document.getElementById('chatInput').value=p; sendMessage(); }
+  function appendSnapshotMsg(dataURL, name, avatar, isYou) {
+    const c = document.getElementById('chatMessages');
+    const d = document.createElement('div');
+    d.className = `msg ${isYou ? 'user' : 'peer'}`;
+    d.dataset.snapshot = 'true'; // exclude from AI history
+    const initials = (name || '?').slice(0, 2).toUpperCase();
+    const nameColor = isYou ? 'var(--gold-300)' : 'var(--neon-blue)';
+    const avatarHTML = avatar
+      ? `<div class="msg-avatar"><img src="${avatar}" style="width:30px;height:30px;border-radius:50%;object-fit:cover" /></div>`
+      : `<div class="msg-avatar" style="background:${isYou ? 'var(--gradient-gold);color:#0D0D1A' : 'linear-gradient(135deg,#8B5CF6,#00D4FF)'}">${initials}</div>`;
+    const bubble = `<div class="msg-bubble" style="padding:8px">
+      <div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:6px;display:flex;align-items:center;gap:6px">
+        <span class="material-icons-round" style="font-size:13px">screenshot_monitor</span>Code snapshot
+      </div>
+      <img src="${dataURL}" style="max-width:100%;border-radius:6px;border:1px solid rgba(255,215,0,0.15);display:block;cursor:pointer" onclick="this.requestFullscreen&&this.requestFullscreen()" title="Click for fullscreen" />
+    </div>`;
+    if (isYou) {
+      d.innerHTML = `<div class="msg-body"><div class="msg-header" style="justify-content:flex-end"><span class="msg-time">Just now</span><span class="msg-name" style="color:${nameColor}">${escHtml(name||'You')}</span></div>${bubble}</div>${avatarHTML}`;
+    } else {
+      d.innerHTML = `${avatarHTML}<div class="msg-body"><div class="msg-header"><span class="msg-name" style="color:${nameColor}">${escHtml(name||'Anonymous')}</span><span class="msg-time">Just now</span></div>${bubble}</div>`;
+    }
+    c.insertBefore(d, document.getElementById('aiTyping'));
+    c.scrollTop = c.scrollHeight;
+  }
+
+  // takeSnapshot — wired by the socket IIFE below once the room is joined
+  function takeSnapshot() { showToast('Join a room first…', 'info', 1500); }
+
   function clearChat() {
     const msgs = document.getElementById('chatMessages');
     const typing = document.getElementById('aiTyping');
@@ -754,14 +1065,10 @@
   }
 
   /* ── Voice ─────────────────────────────────────────────────── */
-  let voiceActive = true;
+  let voiceActive = false;  // starts muted — user must click to join
   function toggleVoice() {
-    voiceActive = !voiceActive;
-    const btn = document.getElementById('voiceBtn');
-    btn.className = `voice-btn ${voiceActive?'active':'muted'}`;
-    btn.innerHTML = `<span class="material-icons-round" style="font-size:16px">${voiceActive?'mic':'mic_off'}</span>${voiceActive?'Live':'Muted'}`;
-    updateWaveform();
-    showToast(voiceActive?'🎙️ Microphone enabled':'🔇 Microphone muted', voiceActive?'success':'warning', 2000);
+    // Placeholder — overridden by WebRTC IIFE once socket is ready
+    showToast('Connecting to room…', 'info', 1200);
   }
   function updateWaveform() {
     const wf = document.getElementById('waveform');
@@ -790,10 +1097,7 @@
   function handleEditorKey(e) { if (e.key==='Tab') { e.preventDefault(); document.execCommand('insertText',false,'  '); } }
 
   /* ── Run Kode ──────────────────────────────────────────────── */
-  function runCode() {
-    showToast('⚙️ Compiling TypeScript...','info',1000);
-    setTimeout(() => showToast('🔴 2 errors found — check status bar','error'), 1200);
-  }
+  function runCode() { termRunCode(); }
 
   /* ── Copy Kode ─────────────────────────────────────────────── */
   function copyCode(btn) {
@@ -820,13 +1124,437 @@
     setTimeout(() => { t.style.opacity='0'; t.style.transform='translateX(100%)'; t.style.transition='all 0.4s ease'; setTimeout(()=>t.remove(),400); }, duration);
   }
 
-  /* ── Animate cursors ───────────────────────────────────────── */
-  setInterval(() => {
-    document.querySelectorAll('.live-cursor').forEach(c => {
-      c.style.top  = (parseInt(c.style.top)  + (Math.random()-0.5)*2) + 'px';
-      c.style.left = (parseInt(c.style.left) + (Math.random()-0.5)*3) + 'px';
+  /* ── Real-time Socket.io collaboration ─────────────────────── */
+  (async () => {
+    // Resolve room ID from URL ?id=...
+    const roomId = new URLSearchParams(window.location.search).get('id') || 'nexus-hackathon';
+
+    // Load current user
+    let currentUser = { id: null, name: 'Anonymous', avatar: null };
+    try {
+      const r = await fetch('/auth/me');
+      if (r.ok) currentUser = await r.json();
+    } catch (_) {}
+
+    // Load room meta
+    try {
+      const r = await fetch(`/api/rooms/${roomId}`);
+      if (r.ok) {
+        const room = await r.json();
+        // Update topbar with real room name
+        const nameEl = document.querySelector('.room-name');
+        if (nameEl) {
+          nameEl.innerHTML = `<span class="online-dot" style="width:7px;height:7px"></span>${room.name}`;
+        }
+        // Pre-fill editor with saved code
+        const editor = document.getElementById('codeContent');
+        if (editor && room.code) {
+          editor.textContent = room.code;
+          renderLineNumbers();
+        }
+      }
+    } catch (_) {}
+
+    // Only connect socket if socket.io is loaded
+    if (typeof io === 'undefined') return;
+
+    const socket = io();
+
+    socket.emit('join-room', {
+      roomId,
+      userId: currentUser.id,
+      name:   currentUser.name,
+      avatar: currentUser.avatar,
     });
-  }, 2000);
+
+    // Receive initial state when joining
+    socket.on('room-joined', ({ code, language, members }) => {
+      const editor = document.getElementById('codeContent');
+      if (editor && code) {
+        editor.textContent = code;
+        renderLineNumbers();
+      }
+      updatePeersPanel(members);
+      showToast(`⚡ Joined room · ${members.length} coder${members.length!==1?'s':''} online`, 'success');
+    });
+
+    // Receive code updates from other users
+    socket.on('code-update', ({ code }) => {
+      const editor = document.getElementById('codeContent');
+      if (!editor || editor === document.activeElement) return; // don't clobber while typing
+      const sel = window.getSelection();
+      const range = sel && sel.rangeCount ? sel.getRangeAt(0).cloneRange() : null;
+      editor.textContent = code;
+      renderLineNumbers();
+    });
+
+    // Broadcast code changes while user types (debounced)
+    let codeDebounce;
+    const editor = document.getElementById('codeContent');
+    if (editor) {
+      editor.addEventListener('input', () => {
+        clearTimeout(codeDebounce);
+        codeDebounce = setTimeout(() => {
+          socket.emit('code-change', { roomId, code: editor.textContent });
+        }, 300);
+      });
+    }
+
+    // Chat: send real messages to the room
+    const origSendMessage = window.sendMessage;
+    window.sendMessage = function () {
+      const input = document.getElementById('chatInput');
+      const text  = input?.value?.trim();
+      if (!text) return;
+      // Show immediately in UI (optimistic)
+      appendUserMsg(text);
+      input.value = ''; input.style.height = 'auto';
+      // Broadcast to room
+      socket.emit('chat-message', {
+        roomId,
+        message: text,
+        userId:  currentUser.id,
+        name:    currentUser.name,
+        avatar:  currentUser.avatar,
+      });
+      // Also ask NexusAI
+      sendMessageToAI(text);
+    };
+
+    // Receive chat from others (text + snapshots)
+    socket.on('chat-message', ({ message, name, avatar, userId, isSnapshot }) => {
+      if (userId === currentUser.id) return; // already shown optimistically
+      if (isSnapshot) {
+        appendSnapshotMsg(message, name, avatar, false);
+        return;
+      }
+      const c = document.getElementById('chatMessages');
+      const d = document.createElement('div');
+      d.className = 'msg peer';
+      const initials = (name || '?').slice(0, 2).toUpperCase();
+      d.innerHTML = `
+        <div class="msg-avatar" style="background:linear-gradient(135deg,#8B5CF6,#00D4FF)">${avatar ? `<img src="${avatar}" style="width:100%;height:100%;border-radius:50%;object-fit:cover">` : initials}</div>
+        <div class="msg-body">
+          <div class="msg-header"><span class="msg-name" style="color:var(--neon-blue)">${escHtml(name||'Anonymous')}</span><span class="msg-time">Just now</span></div>
+          <div class="msg-bubble">${escHtml(message)}</div>
+        </div>`;
+      c.insertBefore(d, document.getElementById('aiTyping'));
+      c.scrollTop = c.scrollHeight;
+    });
+
+    // Real snapshot: capture editor, post to chat, broadcast to room
+    window.takeSnapshot = async function () {
+      const editorEl = document.getElementById('editorArea');
+      if (typeof html2canvas === 'undefined') {
+        showToast('html2canvas not loaded yet, try again in a second', 'warning'); return;
+      }
+      showToast('📸 Capturing editor…', 'info', 2000);
+      try {
+        const canvas = await html2canvas(editorEl, {
+          backgroundColor: '#0D0D18',
+          scale: window.devicePixelRatio || 1,
+          logging: false,
+          useCORS: true,
+        });
+        const dataURL = canvas.toDataURL('image/png');
+        // Show in own chat immediately
+        appendSnapshotMsg(dataURL, currentUser.name || 'You', currentUser.avatar, true);
+        // Broadcast to room
+        socket.emit('chat-message', {
+          roomId,
+          message:    dataURL,
+          userId:     currentUser.id,
+          name:       currentUser.name || 'Anonymous',
+          avatar:     currentUser.avatar,
+          isSnapshot: true,
+        });
+        showToast('📸 Snapshot sent to chat!', 'success', 2500);
+        // Ask NexusAI to explain the code in the snapshot
+        const snapCodeEl = document.getElementById('codeContent');
+        const snapCode   = snapCodeEl ? snapCodeEl.textContent.trim() : '';
+        const snapLangEl = document.querySelector('.lang-select') || document.querySelector('[data-lang]');
+        const snapLang   = snapLangEl ? (snapLangEl.value || snapLangEl.dataset.lang || snapLangEl.textContent.trim()) : '';
+        if (snapCode) {
+          sendMessageToAI(`I just took a snapshot of the editor. Here is the exact code currently in the editor — please explain what it does, how it works, and point out any notable patterns or issues:\n\n\`\`\`${snapLang}\n${snapCode.slice(0, 4000)}\n\`\`\``);
+        } else {
+          sendMessageToAI('I just took a snapshot of the editor, but no code is written yet. Let me know what you\'d like to build!');
+        }
+      } catch (err) {
+        showToast('Snapshot failed: ' + err.message, 'error');
+      }
+    };
+
+    // ── Terminal: wire socket ──────────────────────────────
+    window._termSendCommand = function(cmd, code, language) {
+      setTermRunning(true);
+      if (cmd) {
+        socket.emit('terminal:run', { command: cmd, roomId });
+      } else {
+        socket.emit('terminal:run', { code, language, roomId });
+      }
+    };
+    window._termSendInput = function(data) {
+      socket.emit('terminal:input', { data });
+    };
+    window._termKill = function() {
+      socket.emit('terminal:kill');
+      termPrint('^C', 'stderr');
+    };
+    socket.on('terminal:output', ({ data, type }) => {
+      termPrint(data, type === 'stdout' ? 'stdout' : type === 'stderr' ? 'stderr' : 'system');
+    });
+    socket.on('terminal:exit', ({ code }) => {
+      const msg = code === 0 ? '✓ Process exited (code 0)' : `✗ Process exited (code ${code})`;
+      termPrint(msg, code === 0 ? 'success' : 'stderr');
+      setTermRunning(false);
+    });
+
+    // Receive & render live peer cursors
+    const peerCursors = {}; // socketId → cursor el
+    socket.on('cursor-update', ({ userId, name, color, line, col }) => {
+      const overlay = document.getElementById('cursorsOverlay');
+      const editorEl = document.getElementById('codeContent');
+      if (!overlay || !editorEl) return;
+      const key = userId || name;
+      if (!key) return;
+      let el = peerCursors[key];
+      if (!el) {
+        el = document.createElement('div');
+        el.className = 'live-cursor';
+        el.innerHTML = `<div class="cursor-line" style="background:${color||'#8B5CF6'}"></div><div class="cursor-tag" style="background:${color||'#8B5CF6'};color:${color==='#00FF9F'||color==='#FFD700'?'#0D0D1A':'white'}">${escHtml(name||'?')}</div>`;
+        overlay.appendChild(el);
+        peerCursors[key] = el;
+      }
+      // Position based on line/col in the code editor
+      const lineH = 1.7 * 0.82 * 16; // line-height * font-size (approx)
+      const charW = 0.82 * 16 * 0.6;  // approx monospace char width
+      const padTop = 16, padLeft = 52 + 24; // padding-top + line-numbers width
+      el.style.top  = `${padTop + (line || 0) * lineH}px`;
+      el.style.left = `${padLeft + (col  || 0) * charW}px`;
+    });
+
+    // Remove cursor when user leaves
+    socket.on('user-left', ({ userId, name }) => {
+      const key = userId || name;
+      if (peerCursors[key]) { peerCursors[key].remove(); delete peerCursors[key]; }
+      showToast(`${name} left the room`, 'info', 2500);
+    });
+
+    // User joined / left notifications
+    socket.on('user-joined', ({ name }) => {
+      showToast(`👋 ${name} joined the room`, 'info', 3000);
+    });
+    socket.on('room-members', (members) => updatePeersPanel(members));
+
+    // Emit cursor position when caret moves in editor
+    const editorCursor = document.getElementById('codeContent');
+    if (editorCursor) {
+      const emitCursor = () => {
+        const sel = window.getSelection();
+        if (!sel || !sel.rangeCount) return;
+        const range = sel.getRangeAt(0);
+        const text  = editorCursor.innerText.slice(0, range.startOffset);
+        const lines = text.split('\n');
+        const line  = lines.length - 1;
+        const col   = lines[lines.length - 1].length;
+        socket.emit('cursor-move', { roomId, userId: currentUser.id, name: currentUser.name, line, col });
+      };
+      editorCursor.addEventListener('keyup',   emitCursor);
+      editorCursor.addEventListener('mouseup', emitCursor);
+    }
+
+    function updateMemberCount(n) {
+      const el = document.querySelector('.room-breadcrumb');
+      if (el) el.innerHTML = `<span class="material-icons-round" style="font-size:10px;vertical-align:middle">group</span> ${n} coder${n!==1?'s':''} · AI active`;
+      document.querySelectorAll('.sb-item').forEach(item => {
+        if (item.textContent.includes('coders online')) item.innerHTML = `<span class="material-icons-round" style="font-size:12px">people</span>${n} coders online`;
+      });
+    }
+
+    // Repopulates the peers panel popup AND topbar avatar stack from live socket data
+    function updatePeersPanel(members) {
+      updateMemberCount(members.length);
+
+      // ── Peers panel list ──
+      const title = document.getElementById('peersTitle');
+      const list  = document.getElementById('peersList');
+      if (title) title.innerHTML = `&#9889; Active Coders (${members.length})`;
+      if (list) {
+        list.innerHTML = members.map((m, i) => {
+          const isYou    = m.userId === currentUser.id || m.socketId === socket.id;
+          const initials = (m.name || '?').slice(0, 2).toUpperCase();
+          const bg       = m.color || 'var(--gradient-gold)';
+          const avatarEl = m.avatar
+            ? `<img src="${m.avatar}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;flex-shrink:0" />`
+            : `<div class="avatar avatar-sm" style="background:${bg};flex-shrink:0">${initials}</div>`;
+          return `<div class="peer-row">
+            ${avatarEl}
+            <div style="flex:1;min-width:0">
+              <div class="peer-name">${escHtml(m.name || 'Anonymous')}${isYou ? ' <span style="color:var(--gold-300)">(You)</span>' : ''}</div>
+              <div class="peer-status">Coding ⋅ online</div>
+            </div>
+            <div class="online-dot" style="margin-left:auto;flex-shrink:0"></div>
+          </div>`;
+        }).join('');
+      }
+
+      // ── Topbar collab avatar stack ──
+      const avatarsWrap = document.getElementById('collabAvatars');
+      if (!avatarsWrap) return;
+      const MAX_SHOWN = 4;
+      const shown = members.slice(0, MAX_SHOWN);
+      const extra = members.length - MAX_SHOWN;
+      avatarsWrap.innerHTML = shown.map(m => {
+        const initials = (m.name || '?').slice(0, 2).toUpperCase();
+        const bg       = m.color || 'var(--gradient-gold)';
+        const isYou    = m.userId === currentUser.id || m.socketId === socket.id;
+        if (m.avatar)
+          return `<img class="avatar avatar-sm" src="${m.avatar}" title="${m.name}${isYou?' (You)':''}" style="background:none;border-radius:50%;object-fit:cover;flex-shrink:0" />`;
+        return `<div class="avatar avatar-sm" title="${m.name}${isYou?' (You)':''}" style="background:${bg};flex-shrink:0">${initials}</div>`;
+      }).join('') + (extra > 0
+        ? `<div class="avatar avatar-sm" style="background:var(--bg-elevated);color:var(--text-muted);border:1px solid rgba(255,215,0,0.2);cursor:pointer;flex-shrink:0" onclick="togglePeers()">+${extra}</div>`
+        : '');
+    }
+
+    /* ══ Real WebRTC Voice ════════════════════════════════════
+     * Signaling via Socket.io. STUN-only (works on LAN/localhost).
+     * For production add TURN servers in STUN config.
+     * Flow:
+     *   1. User clicks mic → joinVoiceRoom() → getUserMedia
+     *   2. socket.emit('voice:join') → server sends existing users back
+     *   3. New joiner sends offer to each existing user
+     *   4. Existing users send offer to new joiner when they get voice:user-joined
+     *   Actually simpler: new joiner initiates to ALL existing, existing just wait
+     * ════════════════════════════════════════════════════════ */
+    const STUN_CFG = {
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' },
+      ]
+    };
+    let localStream  = null;
+    const peerConns  = new Map(); // socketId → RTCPeerConnection
+
+    async function joinVoiceRoom() {
+      try {
+        localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      } catch (_) {
+        showToast('Microphone access denied. Allow it in browser settings.', 'error');
+        return;
+      }
+      voiceActive = true;
+      _syncVoiceBtn();
+      updateWaveform();
+      socket.emit('voice:join', { roomId });
+      showToast('🎙️ Microphone enabled — joined voice channel', 'success', 2500);
+    }
+
+    function leaveVoiceRoom() {
+      localStream?.getTracks().forEach(t => t.stop());
+      localStream = null;
+      peerConns.forEach(pc => pc.close());
+      peerConns.clear();
+      document.querySelectorAll('audio[data-rtc-peer]').forEach(a => a.remove());
+      voiceActive = false;
+      _syncVoiceBtn();
+      updateWaveform();
+      socket.emit('voice:leave', { roomId });
+      showToast('🔇 Left voice channel', 'warning', 2500);
+    }
+
+    function _syncVoiceBtn() {
+      const btn = document.getElementById('voiceBtn');
+      if (!btn) return;
+      btn.className = `voice-btn ${voiceActive ? 'active' : 'muted'}`;
+      btn.innerHTML = `<span class="material-icons-round" style="font-size:16px">${voiceActive ? 'mic' : 'mic_off'}</span>${voiceActive ? 'Live' : 'Muted'}`;
+    }
+
+    // Override the global toggleVoice stub with real WebRTC logic
+    window.toggleVoice = function () {
+      if (!voiceActive) joinVoiceRoom();
+      else leaveVoiceRoom();
+    };
+
+    async function _makePeerConn(toSocketId, sendOffer) {
+      if (peerConns.has(toSocketId)) return peerConns.get(toSocketId);
+      const pc = new RTCPeerConnection(STUN_CFG);
+      peerConns.set(toSocketId, pc);
+
+      // Add local audio tracks
+      if (localStream) localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
+
+      // Forward ICE candidates
+      pc.onicecandidate = e => {
+        if (e.candidate) socket.emit('voice:ice', { roomId, to: toSocketId, candidate: e.candidate });
+      };
+
+      // Play remote audio as hidden <audio> element
+      pc.ontrack = e => {
+        let audio = document.getElementById(`rtc-${toSocketId}`);
+        if (!audio) {
+          audio = document.createElement('audio');
+          audio.id = `rtc-${toSocketId}`;
+          audio.setAttribute('data-rtc-peer', '1');
+          audio.autoplay = true;
+          document.body.appendChild(audio);
+        }
+        audio.srcObject = e.streams[0];
+      };
+
+      if (sendOffer) {
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        socket.emit('voice:offer', { roomId, to: toSocketId, sdp: offer });
+      }
+      return pc;
+    }
+
+    // Server sends existing voice users to new joiner → initiate offers to each
+    socket.on('voice:current-users', async (voiceUsers) => {
+      for (const u of voiceUsers) {
+        if (u.socketId !== socket.id) await _makePeerConn(u.socketId, true);
+      }
+    });
+
+    // Someone else joined voice → create peer conn, wait for their offer
+    socket.on('voice:user-joined', async ({ socketId, name }) => {
+      if (socketId === socket.id || !voiceActive) return;
+      await _makePeerConn(socketId, false);
+      showToast(`🎙️ ${name} joined voice`, 'info', 2500);
+    });
+
+    // Someone left voice
+    socket.on('voice:user-left', ({ socketId, name }) => {
+      const pc = peerConns.get(socketId);
+      if (pc) { pc.close(); peerConns.delete(socketId); }
+      const audio = document.getElementById(`rtc-${socketId}`);
+      if (audio) audio.remove();
+      if (name) showToast(`${name} left voice`, 'info', 2000);
+    });
+
+    // Receive offer → answer it
+    socket.on('voice:offer', async ({ from, sdp }) => {
+      if (!voiceActive) return;
+      const pc = peerConns.get(from) || await _makePeerConn(from, false);
+      await pc.setRemoteDescription(new RTCSessionDescription(sdp));
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      socket.emit('voice:answer', { roomId, to: from, sdp: answer });
+    });
+
+    // Receive answer → set remote description
+    socket.on('voice:answer', async ({ from, sdp }) => {
+      const pc = peerConns.get(from);
+      if (pc) await pc.setRemoteDescription(new RTCSessionDescription(sdp));
+    });
+
+    // Receive ICE candidate
+    socket.on('voice:ice', async ({ from, candidate }) => {
+      const pc = peerConns.get(from);
+      if (pc) try { await pc.addIceCandidate(new RTCIceCandidate(candidate)); } catch (_) {}
+    });
+
+  })();
 </script>
 </body>
 </html>

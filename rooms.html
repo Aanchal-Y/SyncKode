@@ -1258,18 +1258,35 @@
   }
 
   /* ── Create Room ────────────────────────────────────────────── */
-  function createRoom() {
+  async function createRoom() {
     const name = document.getElementById('roomName').value.trim();
     if (!name) { showToast('Please enter a room name!', 'error'); return; }
-    closeModal();
-    showToast(`Room "${name}" created! Redirecting...`, 'success');
-    setTimeout(() => window.location.href = 'room.html', 1200);
+    const desc  = document.getElementById('roomDesc').value.trim();
+    const langs = Array.from(document.querySelectorAll('.lang-option.selected')).map(el => el.textContent.replace(/[^\w./ +]/g, '').trim());
+    const priv  = document.querySelector('.privacy-opt.selected .label')?.textContent.toLowerCase() === 'private' ? 'private' : 'public';
+    try {
+      const res = await fetch('/api/rooms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, description: desc, languages: langs, privacy: priv }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        if (res.status === 401) { showToast('Please sign in to create a room.', 'error'); return; }
+        showToast(data.error || 'Failed to create room.', 'error'); return;
+      }
+      closeModal();
+      showToast(`Room "${data.name}" created! Joining…`, 'success');
+      setTimeout(() => { window.location.href = `room.html?id=${data.id}`; }, 800);
+    } catch (err) {
+      showToast('Network error. Is the server running?', 'error');
+    }
   }
 
   /* ── Join Room ──────────────────────────────────────────────── */
   function joinRoom(id) {
-    showToast('Joining room... Connecting to server ⚡', 'info');
-    setTimeout(() => window.location.href = 'room.html', 1000);
+    showToast('Joining room… Connecting to server ⚡', 'info');
+    setTimeout(() => { window.location.href = `room.html?id=${id}`; }, 600);
   }
 
   /* ── Lang toggle ────────────────────────────────────────────── */
@@ -1334,6 +1351,103 @@
   /* ── Load theme ─────────────────────────────────────────────── */
   const t = localStorage.getItem('nexus-theme');
   if (t) document.documentElement.setAttribute('data-theme', t);
+
+  /* Bootstrap: current user + real rooms from API */
+  (async () => {
+    // 1. Load current user, update topbar
+    try {
+      const res = await fetch('/auth/me');
+      if (res.ok) {
+        const user = await res.json();
+        const nameEl   = document.querySelector('.user-name');
+        const roleEl   = document.querySelector('.user-role');
+        const avatarEl = document.querySelector('.user-menu .avatar');
+        if (nameEl)   nameEl.textContent = user.name || 'Coder';
+        if (roleEl)   roleEl.textContent = user.githubUsername ? `@${user.githubUsername}` : 'Pro Coder ✦';
+        if (avatarEl) {
+          if (user.avatar) {
+            avatarEl.innerHTML = `<img src="${user.avatar}" style="width:100%;height:100%;border-radius:50%;object-fit:cover" />`;
+            avatarEl.style.background = 'none';
+          } else {
+            avatarEl.textContent = (user.name || 'U').slice(0, 2).toUpperCase();
+          }
+        }
+      }
+    } catch (_) {}
+
+    // 2. Load rooms from API and replace static grid
+    try {
+      const res = await fetch('/api/rooms');
+      if (!res.ok) return;
+      const apiRooms = await res.json();
+      if (apiRooms.length === 0) return;
+
+      const grid = document.getElementById('roomsGrid');
+      if (!grid) return;
+      grid.innerHTML = '';
+
+      const accents = [
+        'var(--gradient-aurora)',
+        'linear-gradient(90deg,#8B5CF6,#00D4FF)',
+        'linear-gradient(90deg,#00FF9F,#00D4FF)',
+        'linear-gradient(90deg,#FF6B1A,#FFD700)',
+        'linear-gradient(90deg,#FF2D78,#8B5CF6)',
+        'var(--gradient-gold)',
+      ];
+      const emojis = ['🎮','⚡','🐍','🦀','⚙️','🐹'];
+
+      apiRooms.forEach((room, i) => {
+        const langs  = (room.languages || []).map(l => `<span class="lang-tag">${l}</span>`).join('');
+        const isFeat = room.featured && i === 0;
+        const avatar = room.ownerAvatar
+          ? `<img class="avatar avatar-sm" src="${room.ownerAvatar}" style="border-radius:50%;object-fit:cover;width:28px;height:28px" />`
+          : `<div class="avatar avatar-sm" style="background:var(--gradient-gold);color:#0D0D1A">${(room.ownerName||'S').slice(0,2).toUpperCase()}</div>`;
+
+        const card = document.createElement('div');
+        card.className = `room-card${isFeat ? ' featured' : ''}`;
+        card.style.setProperty('--card-accent', accents[i % accents.length]);
+        card.onclick = () => joinRoom(room.id);
+        card.innerHTML = `
+          <div class="card-top">
+            <div class="room-icon-wrap" style="background:rgba(255,215,0,0.12)">
+              ${emojis[i % emojis.length]}
+              <div class="room-status-dot status-live"></div>
+            </div>
+            <div class="card-badges">
+              ${isFeat ? '<span class="badge badge-gold">★ Featured</span>' : ''}
+              <span class="badge badge-green">LIVE</span>
+            </div>
+          </div>
+          <div>
+            <div class="room-title">${room.name}</div>
+            <div class="room-desc">${room.description || ''}</div>
+          </div>
+          <div class="lang-tags">${langs}</div>
+          <div class="card-bottom">
+            <div style="display:flex;align-items:center;gap:8px">
+              ${avatar}
+              <span class="coder-count">${room.memberCount || 0} active</span>
+            </div>
+            <button class="join-btn" onclick="event.stopPropagation();joinRoom('${room.id}')">Join Room →</button>
+          </div>`;
+        grid.appendChild(card);
+      });
+
+      // Re-attach 3-D tilt to new cards
+      document.querySelectorAll('.room-card').forEach(card => {
+        card.addEventListener('mousemove', e => {
+          const r = card.getBoundingClientRect();
+          const x = (e.clientX - r.left) / r.width  - 0.5;
+          const y = (e.clientY - r.top)  / r.height - 0.5;
+          card.style.transform = `translateY(-5px) rotateX(${-y*4}deg) rotateY(${x*4}deg)`;
+        });
+        card.addEventListener('mouseleave', () => {
+          card.style.transform = '';
+          card.style.transition = 'transform 0.4s ease';
+        });
+      });
+    } catch (_) { /* API unavailable — hardcoded cards remain visible */ }
+  })();
 </script>
 </body>
 </html>

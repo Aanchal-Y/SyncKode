@@ -1159,7 +1159,42 @@
     }
   }
 
-  function saveChanges() {
+  async function saveChanges() {
+    // Collect profile fields with data-field attributes
+    const inputs  = document.querySelectorAll('.field-input[data-field]');
+    const payload = {};
+    inputs.forEach(el => { payload[el.dataset.field] = el.value || el.textContent; });
+
+    try {
+      const res = await fetch('/api/user/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) { showToast(data.error || 'Save failed.', 'error'); return; }
+    } catch (_) { /* offline — still show success for UX */ }
+
+    // Password change (if fields are filled)
+    const curPwd  = document.getElementById('currentPwd')?.value;
+    const newPwd  = document.getElementById('newPwd')?.value;
+    const confPwd = document.getElementById('confirmPwd')?.value;
+    if (newPwd) {
+      if (newPwd !== confPwd) { showToast('Passwords do not match!', 'error'); return; }
+      try {
+        const res = await fetch('/api/user/password', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ currentPassword: curPwd, newPassword: newPwd }),
+        });
+        const data = await res.json();
+        if (!res.ok) { showToast(data.error || 'Password update failed.', 'error'); return; }
+        document.getElementById('currentPwd').value = '';
+        document.getElementById('newPwd').value = '';
+        document.getElementById('confirmPwd').value = '';
+      } catch (_) {}
+    }
+
     const bar = document.getElementById('saveBar');
     bar.style.opacity = '0'; bar.style.pointerEvents = 'none';
     isDirty = false;
@@ -1336,6 +1371,52 @@
   /* ── Theme on load ─────────────────────────────────────────── */
   const saved = localStorage.getItem('nexus-theme');
   if (saved) document.documentElement.setAttribute('data-theme', saved);
+
+  /* Bootstrap: load logged-in user into form fields */
+  (async () => {
+    try {
+      const res = await fetch('/auth/me');
+      if (!res.ok) return;
+      const user = await res.json();
+
+      // Update topbar chip
+      const chipName   = document.querySelector('.user-chip-name');
+      const chipAvatar = document.querySelector('.user-chip .avatar');
+      if (chipName)   chipName.textContent = user.name || 'Coder';
+      if (chipAvatar) {
+        if (user.avatar) {
+          chipAvatar.innerHTML = `<img src="${user.avatar}" style="width:100%;height:100%;border-radius:50%;object-fit:cover" />`;
+          chipAvatar.style.background = 'none';
+        } else {
+          chipAvatar.textContent = (user.name||'U').slice(0,2).toUpperCase();
+        }
+      }
+
+      // Avatar preview section
+      const prev = document.getElementById('avatarPreview');
+      if (prev && user.avatar) {
+        prev.style.background = 'none';
+        prev.innerHTML = `<img src="${user.avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" /><div class="avatar-edit-overlay"><span class="material-icons-round" style="color:white;font-size:1.5rem">photo_camera</span></div>`;
+      }
+
+      // Populate all inputs/textareas that have data-field="xxx"
+      document.querySelectorAll('.field-input[data-field]').forEach(el => {
+        const key = el.dataset.field;
+        if (user[key] !== undefined) el.value = user[key];
+      });
+
+      // Hardcoded-placeholder inputs
+      const nameInput   = document.querySelector('input[placeholder="First name"]');
+      const usnameInput = document.querySelector('input[placeholder="username"]');
+      const emailEl     = document.querySelector('input[type="email"]:not([id*="Pwd"]):not([placeholder$="password"])');
+      const bioEl       = document.querySelector('textarea.field-input');
+      if (nameInput   && user.name)     nameInput.value   = user.name.split(' ')[0];
+      if (usnameInput && user.username) usnameInput.value = user.username;
+      if (emailEl     && user.email)    emailEl.value     = user.email;
+      if (bioEl       && user.bio)      bioEl.value       = user.bio;
+
+    } catch (_) { /* server offline or not authenticated */ }
+  })();
 </script>
 </body>
 </html>

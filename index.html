@@ -885,42 +885,76 @@
   }
 
   /* ── Login Handler ─────────────────────────────────────── */
-  function handleLogin(e) {
+  async function handleLogin(e) {
     e.preventDefault();
     const btn = document.getElementById('loginBtn');
+    const origHTML = btn.innerHTML;
     btn.innerHTML = `<div class="spinner"></div> Signing in...`;
     btn.disabled = true;
-    setTimeout(() => {
-      showToast('Welcome back! Redirecting to your workspace...', 'success');
-      setTimeout(() => { window.location.href = 'rooms.html'; }, 1200);
-    }, 1800);
+    try {
+      const res = await fetch('/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email:    document.getElementById('loginEmail').value,
+          password: document.getElementById('loginPassword').value,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showToast(data.error || 'Sign-in failed.', 'error');
+        btn.innerHTML = origHTML;
+        btn.disabled = false;
+        return;
+      }
+      showToast(`Welcome back, ${data.user.name}! Redirecting...`, 'success');
+      setTimeout(() => { window.location.href = 'rooms.html'; }, 1000);
+    } catch (err) {
+      showToast('Network error. Is the server running?', 'error');
+      btn.innerHTML = origHTML;
+      btn.disabled = false;
+    }
   }
 
   /* ── Register Handler ──────────────────────────────────── */
-  function handleRegister(e) {
+  async function handleRegister(e) {
     e.preventDefault();
-    const pass = document.getElementById('regPassword').value;
+    const pass    = document.getElementById('regPassword').value;
     const confirm = document.getElementById('regConfirm').value;
-    if (pass !== confirm) {
-      showToast('Passwords do not match!', 'error');
-      return;
-    }
+    if (pass !== confirm) { showToast('Passwords do not match!', 'error'); return; }
     const btn = document.getElementById('registerBtn');
+    const origHTML = btn.innerHTML;
     btn.innerHTML = `<div class="spinner"></div> Creating account...`;
     btn.disabled = true;
-    setTimeout(() => {
-      showToast('Account created successfully! Welcome aboard! 🚀', 'success');
-      setTimeout(() => { window.location.href = 'rooms.html'; }, 1200);
-    }, 2000);
+    try {
+      const res = await fetch('/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name:     document.getElementById('regName').value,
+          email:    document.getElementById('regEmail').value,
+          password: pass,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showToast(data.error || 'Registration failed.', 'error');
+        btn.innerHTML = origHTML;
+        btn.disabled = false;
+        return;
+      }
+      showToast(`Account created! Welcome, ${data.user.name}! 🚀`, 'success');
+      setTimeout(() => { window.location.href = 'rooms.html'; }, 1000);
+    } catch (err) {
+      showToast('Network error. Is the server running?', 'error');
+      btn.innerHTML = origHTML;
+      btn.disabled = false;
+    }
   }
 
   /* ── Social Login ──────────────────────────────────────── */
   function socialLogin(provider) {
-    showToast(`Connecting to ${provider.charAt(0).toUpperCase() + provider.slice(1)}...`, 'info');
-    setTimeout(() => {
-      showToast('Authentication successful!', 'success');
-      setTimeout(() => { window.location.href = 'rooms.html'; }, 1000);
-    }, 1500);
+    showToast(`${provider.charAt(0).toUpperCase() + provider.slice(1)} sign-in coming soon — use email & password to log in`, 'info', 3000);
   }
 
   /* ── Theme ─────────────────────────────────────────────── */
@@ -957,6 +991,14 @@
   /* ── Load saved theme ──────────────────────────────────── */
   const savedTheme = localStorage.getItem('nexus-theme');
   if (savedTheme) document.documentElement.setAttribute('data-theme', savedTheme);
+
+  /* ── If already logged in, redirect to rooms ────────────── */
+  (async () => {
+    try {
+      const res = await fetch('/auth/me');
+      if (res.ok) window.location.replace('rooms.html');
+    } catch (_) { /* server not running or not logged in — stay on page */ }
+  })();
 
   /* ── Animate inputs on focus ───────────────────────────── */
   document.querySelectorAll('.input').forEach(input => {

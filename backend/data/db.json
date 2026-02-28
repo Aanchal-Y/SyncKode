@@ -1,0 +1,85 @@
+{
+  "users": [
+    {
+      "id": "ecf4e8bb-7aee-4276-b47c-913c9d9d5da0",
+      "email": "aanchalyadav2004@gmail.com",
+      "password": "$2a$10$xNASjs00AFnhD6Vh.CP6VuHb8mSd189oEEH3VHM71iiZ9CHPClNm.",
+      "name": "aanchal",
+      "username": "aanchal",
+      "avatar": null,
+      "bio": "",
+      "githubId": null,
+      "githubUsername": null,
+      "createdAt": "2026-02-28T05:45:41.287Z"
+    }
+  ],
+  "rooms": [
+    {
+      "id": "nexus-hackathon",
+      "name": "SyncKode Hackathon — Build with AI",
+      "description": "Global 48-hour hackathon. Build the future with AI-assisted tools.",
+      "languages": [
+        "Python",
+        "TypeScript",
+        "React",
+        "Rust"
+      ],
+      "privacy": "public",
+      "ownerId": null,
+      "members": [],
+      "code": "/* SyncKode · Collaboration styles */\n\n.nexus-workspace {\n  display: grid;\n  grid-template-columns: 1fr 380px;\n  height: 100vh;\n  background: #050508;\n} ",
+      "language": "javascript",
+      "createdAt": "2026-02-28T05:40:45.478Z",
+      "featured": true
+    },
+    {
+      "id": "react-workshop",
+      "name": "React 19 Deep Dive Workshop",
+      "description": "Exploring Server Components, concurrent features & the new compiler.",
+      "languages": [
+        "React",
+        "TypeScript",
+        "Next.js"
+      ],
+      "privacy": "public",
+      "ownerId": null,
+      "members": [],
+      "code": "import React from \"react\";\n\nexport default function App() {\n  return <h1>Hello SyncKode!</h1>;\n}\n",
+      "language": "javascript",
+      "createdAt": "2026-02-28T05:40:45.481Z",
+      "featured": false
+    },
+    {
+      "id": "python-ml",
+      "name": "Python ML & LLM Playground",
+      "description": "Fine-tuning models, RAG pipelines, and agentic workflows.",
+      "languages": [
+        "Python",
+        "PyTorch",
+        "LangChain"
+      ],
+      "privacy": "public",
+      "ownerId": null,
+      "members": [],
+      "code": "# SyncKode Python ML Playground\nimport torch\nprint(\"CUDA available:\", torch.cuda.is_available())\n",
+      "language": "python",
+      "createdAt": "2026-02-28T05:40:45.481Z",
+      "featured": false
+    },
+    {
+      "id": "full-stack-work-229fb",
+      "name": "full stack work",
+      "description": "here the work on html css js",
+      "languages": [
+        "JavaScript"
+      ],
+      "privacy": "public",
+      "ownerId": "ecf4e8bb-7aee-4276-b47c-913c9d9d5da0",
+      "members": [],
+      "code": "// Start coding here...\n",
+      "language": "javascript",
+      "createdAt": "2026-02-28T05:47:27.691Z",
+      "featured": false
+    }
+  ]
+}
